@@ -1,0 +1,38 @@
+{
+  "figmaName": "LoginPage",
+  "figmaType": "AUTO_LAYOUT",
+  "htmlTag": "div",
+  "componentRef": "LoginPage",
+  "layout": { "x": 0, "y": 0, "width": 1440, "height": 900 },
+  "autoLayout": {
+    "direction": "VERTICAL",
+    "spacing": 0,
+    "primaryAlign": "CENTER",
+    "counterAlign": "CENTER"
+  },
+  "styles": { "backgroundColor": "rgb(249, 250, 251)" },
+  "pluginData": {
+    "sourceFile": "src/views/LoginPage.vue",
+    "selector": "div.login-page",
+    "cssClasses": "login-page min-h-screen flex",
+    "originalTag": "div"
+  },
+  "children": [
+    {
+      "figmaName": "LoginCard",
+      "figmaType": "AUTO_LAYOUT",
+      "htmlTag": "div",
+      "layout": { "x": 460, "y": 200, "width": 520, "height": 500 },
+      "styles": {
+        "backgroundColor": "rgb(255, 255, 255)",
+        "borderRadius": { "topLeft": 16, "topRight": 16, "bottomRight": 16, "bottomLeft": 16 }
+      },
+      "pluginData": {
+        "sourceFile": "src/views/LoginPage.vue",
+        "selector": "div.login-card",
+        "cssClasses": "login-card bg-white rounded-2xl"
+      },
+      "children": []
+    }
+  ]
+}

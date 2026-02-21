@@ -1,0 +1,12 @@
+{
+  "name": "airis-pdm-figma-plugin",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc && cp src/ui.html dist/ui.html",
+    "prebuild": "mkdir -p dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

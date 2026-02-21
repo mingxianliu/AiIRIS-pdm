@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; font-size: 12px; color: #333; padding: 16px; background: #fff; }
+    h2 { font-size: 16px; margin-bottom: 12px; }
+    h3 { font-size: 13px; margin: 16px 0 8px; color: #666; }
+    .section { margin-bottom: 16px; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-primary { background: #18a0fb; color: white; }
+    .btn-primary:hover { background: #0c8ce9; }
+    .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+    .btn-secondary { background: #f0f0f0; color: #333; }
+    .btn-secondary:hover { background: #e0e0e0; }
+    .file-drop { border: 2px dashed #ccc; border-radius: 8px; padding: 24px; text-align: center; cursor: pointer; margin-bottom: 12px; }
+    .file-drop:hover, .file-drop.dragover { border-color: #18a0fb; background: #f0f8ff; }
+    .file-drop input { display: none; }
+    textarea { width: 100%; height: 120px; border: 1px solid #ddd; border-radius: 6px; padding: 8px; font-family: monospace; font-size: 11px; resize: vertical; }
+    .status { padding: 8px 12px; border-radius: 6px; margin: 8px 0; font-size: 11px; }
+    .status-info { background: #e8f4fd; color: #1a73e8; }
+    .status-success { background: #e6f4ea; color: #137333; }
+    .status-error { background: #fce8e6; color: #c5221f; }
+    .preview { background: #f8f8f8; border: 1px solid #eee; border-radius: 6px; padding: 8px; font-family: monospace; font-size: 10px; max-height: 200px; overflow-y: auto; white-space: pre; }
+    .actions { display: flex; gap: 8px; margin-top: 12px; }
+    .tab-bar { display: flex; gap: 0; margin-bottom: 16px; border-bottom: 1px solid #eee; }
+    .tab { padding: 8px 16px; font-size: 12px; cursor: pointer; border-bottom: 2px solid transparent; color: #999; }
+    .tab.active { color: #18a0fb; border-bottom-color: #18a0fb; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+  </style>
+</head>
+<body>
+  <h2>⇄ Code-to-Figma Sync (AiIRIS-pdm)</h2>
+  <div class="tab-bar">
+    <div class="tab active" data-tab="import" onclick="switchTab('import')">📥 Import</div>
+    <div class="tab" data-tab="export" onclick="switchTab('export')">📤 Export</div>
+  </div>
+  <div id="tab-import" class="tab-content active">
+    <div class="section">
+      <h3>Load IR Payload</h3>
+      <div class="file-drop" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <input type="file" id="fileInput" accept=".json" />
+        <p>📄 Drop <code>plugin-payload.json</code> here or click to browse</p>
+      </div>
+      <div style="text-align: center; color: #999; margin: 8px 0;">— or paste JSON —</div>
+      <textarea id="jsonInput" placeholder="Paste the IR JSON payload here..."></textarea>
+    </div>
+    <div id="preview-section" class="section" style="display: none;">
+      <h3>Preview Naming Tree</h3>
+      <div class="preview" id="treePreview"></div>
+    </div>
+    <div id="status" style="display: none;"></div>
+    <div class="actions">
+      <button class="btn btn-primary" id="importBtn" disabled onclick="doImport()">🚀 Import to Figma</button>
+      <button class="btn btn-secondary" onclick="doPreview()">👁️ Preview Names</button>
+    </div>
+  </div>
+  <div id="tab-export" class="tab-content">
+    <div class="section">
+      <h3>Export Selected Frame</h3>
+      <p style="color: #666; margin-bottom: 12px;">Select a frame created by this plugin, then click Export.</p>
+      <button class="btn btn-primary" onclick="doExport()">📤 Export Selection</button>
+    </div>
+    <div id="export-result" class="section" style="display: none;">
+      <h3>Export Result</h3>
+      <textarea id="exportOutput" style="height: 200px;" readonly></textarea>
+      <div class="actions"><button class="btn btn-secondary" onclick="copyExport()">📋 Copy</button></div>
+    </div>
+  </div>
+  <script>
+    let loadedPayload = null;
+    function switchTab(tabName) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelector('[data-tab="' + tabName + '"]').classList.add('active');
+      document.getElementById('tab-' + tabName).classList.add('active');
+    }
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); });
+    fileInput.addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+    function loadFile(file) {
+      const reader = new FileReader();
+      reader.onload = e => { document.getElementById('jsonInput').value = e.target.result; parsePayload(e.target.result); };
+      reader.readAsText(file);
+    }
+    document.getElementById('jsonInput').addEventListener('input', e => { if (e.target.value.trim()) parsePayload(e.target.value); });
+    function parsePayload(text) {
+      try {
+        loadedPayload = JSON.parse(text);
+        document.getElementById('importBtn').disabled = false;
+        showStatus('✅ Payload loaded: ' + countNodes(loadedPayload) + ' nodes', 'success');
+      } catch (err) {
+        loadedPayload = null;
+        document.getElementById('importBtn').disabled = true;
+        showStatus('❌ Invalid JSON: ' + err.message, 'error');
+      }
+    }
+    function doPreview() {
+      if (!loadedPayload) { showStatus('⚠️ Load a payload first', 'error'); return; }
+      document.getElementById('treePreview').textContent = buildTreePreview(loadedPayload, 0);
+      document.getElementById('preview-section').style.display = 'block';
+    }
+    function buildTreePreview(node, depth) {
+      const indent = '  '.repeat(depth);
+      const icon = node.figmaType === 'TEXT' ? '📝' : node.figmaType === 'AUTO_LAYOUT' ? '📐' : node.figmaType === 'COMPONENT' ? '🧩' : node.figmaType === 'IMAGE' ? '🖼️' : node.figmaType === 'RECTANGLE' ? '▫️' : '📦';
+      let line = indent + icon + ' ' + node.figmaName + '  [' + node.figmaType + ']';
+      if (node.componentRef) line += '  <' + node.componentRef + '>';
+      if (node.text) line += '  "' + (node.text.characters || '').substring(0, 30) + '..."';
+      line += '\n';
+      for (const child of node.children || []) line += buildTreePreview(child, depth + 1);
+      return line;
+    }
+    function doImport() {
+      if (!loadedPayload) return;
+      document.getElementById('importBtn').disabled = true;
+      showStatus('⏳ Creating nodes...', 'info');
+      parent.postMessage({ pluginMessage: { type: 'import-ir', payload: loadedPayload } }, '*');
+    }
+    function doExport() { parent.postMessage({ pluginMessage: { type: 'export-tree' } }, '*'); }
+    function copyExport() { document.getElementById('exportOutput').select(); document.execCommand('copy'); showStatus('📋 Copied', 'success'); }
+    window.onmessage = function(event) {
+      const msg = event.data.pluginMessage;
+      if (!msg) return;
+      if (msg.type === 'status') showStatus('⏳ ' + msg.text, 'info');
+      if (msg.type === 'import-complete') { showStatus('✅ Import complete! ' + msg.nodeCount + ' nodes.', 'success'); document.getElementById('importBtn').disabled = false; }
+      if (msg.type === 'export-result') { document.getElementById('exportOutput').value = JSON.stringify(msg.data, null, 2); document.getElementById('export-result').style.display = 'block'; }
+      if (msg.type === 'error') showStatus('❌ ' + msg.text, 'error');
+    };
+    function showStatus(text, type) { const el = document.getElementById('status'); el.textContent = text; el.className = 'status status-' + type; el.style.display = 'block'; }
+    function countNodes(node) { let n = 1; for (const c of node.children || []) n += countNodes(c); return n; }
+  </script>
+</body>
+</html>

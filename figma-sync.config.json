@@ -1,0 +1,22 @@
+{
+  "figma": {
+    "personalAccessToken": "YOUR_FIGMA_TOKEN",
+    "fileKey": "YOUR_FILE_KEY"
+  },
+  "source": {
+    "framework": "vue",
+    "styleStrategy": "tailwind",
+    "entryUrl": "http://localhost:5173",
+    "srcRoot": "./src"
+  },
+  "viewport": { "width": 1440, "height": 900, "deviceName": "Desktop" },
+  "naming": {
+    "separator": "/",
+    "ignoreClasses": ["flex", "grid", "block", "inline", "hidden", "w-full", "h-full", "relative", "absolute", "p-", "m-", "px-", "py-", "mx-", "my-", "text-", "bg-", "border-", "rounded-", "font-", "leading-", "tracking-"]
+  },
+  "export": {
+    "snapshotDir": ".figma-sync",
+    "pluginPayloadFile": ".figma-sync/plugin-payload.json",
+    "nameMappingFile": ".figma-sync/name-mapping.json"
+  }
+}
