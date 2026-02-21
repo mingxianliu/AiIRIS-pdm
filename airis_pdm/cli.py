@@ -18,8 +18,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from .naming_engine import preview_naming_tree
-from .dom_extractor import extract_dom_tree, ExtractionConfig
-from .ir_builder import build_ir_from_extraction, save_ir
+from .dom_extractor_v2 import extract_dom_tree, ExtractionConfig
+from .ir_builder_v2 import build_ir_from_extraction, save_ir
 from .figma_reader import FigmaAPIClient, FigmaToIR, IRDiffer
 from .code_patcher import CodePatcher
 from .config import load_config
@@ -206,7 +206,6 @@ def main():
     push_p.add_argument("--erslice", action="store_true", help="Write ErSlice manifest & completeness")
     push_p.add_argument("--erslice-module", default="default", help="Module name for manifest")
     push_p.add_argument("--erslice-page", default="page", help="Page slug for manifest")
-    push_p.add_argument("--v2", action="store_true", help="Use v2 pipeline (gradient, shadow, SVG, grid, etc.)")
 
     preview_p = sub.add_parser("preview", help="Preview naming tree")
     preview_p.add_argument("url", help="App URL")
