@@ -69,6 +69,9 @@ python -m airis_pdm.cli push http://localhost:5173
 
 # 指定 viewport
 python -m airis_pdm.cli push http://localhost:5173 --viewport 375x812
+
+# 使用 v2 管線（完整保真：gradient、inset shadow、SVG、grid→Auto Layout、backdrop blur 等）
+python -m airis_pdm.cli push http://localhost:5173 --v2
 ```
 
 產出於 `.figma-sync/`：
@@ -108,6 +111,8 @@ AiIRIS-pdm/
 │   ├── code_patcher.py         # IR diff → 原始碼 patch
 │   ├── config.py               # 設定載入
 │   ├── design_assets.py        # ErSlice 風格 manifest / tokens 輔助
+│   ├── dom_extractor_v2.py     # v2 DOM 擷取（gradient、shadow、SVG、grid 等）
+│   ├── ir_builder_v2.py        # v2 IR（IR 2.0，完整樣式覆蓋）
 │   └── cli.py                  # CLI 入口
 ├── schemas/
 │   └── ir_schema.json          # IR JSON Schema
@@ -115,8 +120,15 @@ AiIRIS-pdm/
 ├── examples/
 │   └── login-page-payload.json
 └── docs/
-    └── ERSLICE_INTEGRATION.md  # 與 ErSlice 對齊說明
+    ├── ERSLICE_INTEGRATION.md  # 與 ErSlice 對齊說明
+    └── COMPARISON_V2.md        # v2 管線功能矩陣（vs html-figma / v1）
 ```
+
+### V2 管線（`--v2`）
+
+- **DOM 擷取 v2**：漸層、分邊 border、inset/text shadow、SVG、pseudo、CSS transform、grid、filter/backdrop-filter、base64 圖、canvas 等。
+- **IR 2.0**：對應 Figma GradientPaint、INNER_SHADOW、BACKGROUND_BLUR、text decoration/truncation、clipsContent、z-index 等。
+- 功能對照見 [docs/COMPARISON_V2.md](docs/COMPARISON_V2.md)。**Figma Plugin v2**：`figma_plugin/src/code_v2.ts` → `dist/code_v2.js`；匯入 IR 2.0 時可將 manifest 的 `main` 改為 `code_v2.js`。
 
 ---
 

@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2025-02-21
+
+### Added
+
+- **V2 管線（filesV2 優化）**
+  - `airis_pdm.dom_extractor_v2`：完整保真 DOM 擷取（gradient、分邊 border、inset/text shadow、SVG、pseudo、transform、grid、filter/backdrop、base64 圖、canvas 等）
+  - `airis_pdm.ir_builder_v2`：IR 2.0 建構（GradientPaint、INNER_SHADOW、BACKGROUND_BLUR、text decoration/truncation、clipsContent、z-index）
+  - CLI `push --v2`：使用 v2 擷取 + IR 2.0，產出與 Figma Plugin v2 相容之 payload
+  - docs/COMPARISON_V2.md：v2 與 html-figma / v1 功能矩陣
+  - figma_plugin/src/code_v2.ts：Figma Plugin v2 原始碼（IR 2.0 匯入；建置需另行設定）
+
+### Changed
+
+- README：新增 V2 管線說明、專案結構含 dom_extractor_v2 / ir_builder_v2、Figma Plugin v2 使用說明
+- figma_plugin/tsconfig.json：排除 code_v2.ts 以維持主建置通過；v2 可選單獨建置
+
+---
+
 ## [0.1.0] - 2025-02-21
 
 ### Added
