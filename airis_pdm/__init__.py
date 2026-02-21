@@ -13,11 +13,15 @@ from .naming_engine import (
     ReactComponentDetector,
     preview_naming_tree,
 )
-from .dom_extractor_v2 import extract_dom_tree, extract_dom_tree_sync, ExtractionConfig
-from .ir_builder_v2 import IRBuilderV2, build_ir_from_extraction, save_ir
+from .dom_extractor import extract_dom_tree, extract_dom_tree_sync, ExtractionConfig
+from .ir_builder import IRBuilderV2, build_ir_from_extraction, save_ir
+
+# 對外 API 使用 IRBuilder（與 IRBuilderV2 為同一實作）
+IRBuilder = IRBuilderV2
 from .figma_reader import FigmaAPIClient, FigmaToIR, IRDiffer
 from .code_patcher import CodePatcher
 from .config import load_config
+from . import design_assets
 
 __all__ = [
     "__version__",
@@ -30,12 +34,13 @@ __all__ = [
     "extract_dom_tree_sync",
     "ExtractionConfig",
     "IRBuilder",
+    "IRBuilderV2",
     "build_ir_from_extraction",
     "save_ir",
     "FigmaAPIClient",
     "FigmaToIR",
     "IRDiffer",
     "CodePatcher",
-        "load_config",
+    "load_config",
     "design_assets",
 ]

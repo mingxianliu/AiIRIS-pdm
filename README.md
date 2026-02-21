@@ -64,8 +64,9 @@ playwright install chromium
 # 預覽命名樹（不實際推送）
 python -m airis_pdm.cli preview http://localhost:5173
 
-# 生成 IR payload
+# 生成 IR payload（安裝後也可用 figma-sync 指令）
 python -m airis_pdm.cli push http://localhost:5173
+figma-sync push http://localhost:5173
 
 # 指定 viewport
 python -m airis_pdm.cli push http://localhost:5173 --viewport 375x812
@@ -79,8 +80,8 @@ python -m airis_pdm.cli push http://localhost:5173 --viewport 375x812
 
 ### 3. Figma 匯入
 
-1. 開啟 Figma，執行 **Code-to-Figma Sync** plugin（可沿用 [figma-code-sync](https://github.com/erich/figma-code-sync) 的 `figma_plugin/`）
-2. 載入 `plugin-payload.json`，點擊 Import to Figma
+1. 本專案內建 **Code-to-Figma Sync** plugin：`cd figma_plugin && npm run build`，產出 `dist/code.js`、`dist/ui.html`。
+2. 在 Figma 載入該 plugin，選擇 `plugin-payload.json`，點擊 Import to Figma。
 
 ### 4. Pull: Figma → Code
 
@@ -102,8 +103,8 @@ AiIRIS-pdm/
 ├── airis_pdm/                  # 主套件
 │   ├── __init__.py
 │   ├── naming_engine.py        # 命名引擎（核心）
-│   ├── dom_extractor_v2.py     # DOM 擷取（完整保真：gradient、shadow、SVG、grid 等）
-│   ├── ir_builder_v2.py        # DOM → IR 2.0
+│   ├── dom_extractor.py        # DOM 擷取（完整保真：gradient、shadow、SVG、grid 等）
+│   ├── ir_builder.py           # DOM → IR 2.0
 │   ├── figma_reader.py         # Figma REST API + IR Diff
 │   ├── code_patcher.py         # IR diff → 原始碼 patch
 │   ├── config.py               # 設定載入
@@ -114,9 +115,11 @@ AiIRIS-pdm/
 ├── figma-sync.config.json      # 設定範例
 ├── examples/
 │   └── login-page-payload.json
+├── tests/
+│   └── test_smoke.py           # 匯入與 API smoke 測試
 └── docs/
     ├── ERSLICE_INTEGRATION.md  # 與 ErSlice 對齊說明
-    └── COMPARISON_V2.md        # v2 管線功能矩陣（vs html-figma / v1）
+    └── COMPARISON_V2.md        # 管線功能矩陣（vs html-figma）
 ```
 
 ### 管線（單一、完整保真）
@@ -165,6 +168,13 @@ AiIRIS-pdm/
 ```
 
 ---
+
+## 測試
+
+```bash
+pip install -e ".[dev]"
+pytest tests/ -v
+```
 
 ## License
 

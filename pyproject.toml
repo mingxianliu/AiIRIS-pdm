@@ -9,7 +9,7 @@ description = "AiIRIS Project Design Model — Code ↔ Figma bidirectional sync
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
-authors = [{ name = "AiIRIS", url = "https://github.com/mingxianliu/AiIRIS-pdm" }]
+authors = [{ name = "AiIRIS" }]
 keywords = ["figma", "design", "vue", "react", "sync", "code-to-design"]
 classifiers = [
     "Development Status :: 3 - Alpha",

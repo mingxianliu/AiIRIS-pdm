@@ -21,6 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 移除未使用的 `dom_extractor.py`、`ir_builder.py`（僅保留 dom_extractor_v2、ir_builder_v2）
 - 版本統一為 0.2.0（`__init__.py`、`pyproject.toml`）
 
+### 後續優化 (0.2.0)
+
+- **模組命名**：`dom_extractor_v2.py` → `dom_extractor.py`、`ir_builder_v2.py` → `ir_builder.py`，對外 API 保留 `IRBuilder` 別名。
+- **README**：Figma 匯入改為本專案內建建置說明；補充 `figma-sync` 指令與測試指令。
+- **測試**：新增 `tests/test_smoke.py`（匯入、公開 API、`build_ir_from_extraction` 最小呼叫）。
+- **pyproject.toml**：`authors` 移除不支援的 `url` 以符合 PEP 621。
+
 ---
 
 ## [0.1.0] - 2025-02-21
