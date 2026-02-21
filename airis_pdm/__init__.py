@@ -4,7 +4,7 @@ AiIRIS-pdm — Code ↔ Figma 雙向同步（Python 管線）
 彙整 figma-code-sync 的 IR / 命名引擎與 ErSlice 的設計資產概念。
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 from .naming_engine import (
     NamingConfig,

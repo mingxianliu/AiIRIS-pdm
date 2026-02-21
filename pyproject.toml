@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "airis-pdm"
-version = "0.1.0"
+version = "0.2.0"
 description = "AiIRIS Project Design Model — Code ↔ Figma bidirectional sync with 100% naming control"
 readme = "README.md"
 license = { text = "MIT" }

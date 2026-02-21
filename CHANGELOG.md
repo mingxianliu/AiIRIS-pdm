@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **不再並存 v1/v2**：移除 CLI `--v2`、移除 manifest-v2、build:v2；一律使用最佳管線
 - README：專案結構與說明改為單一管線、單一 plugin 建置
+- 移除未使用的 `dom_extractor.py`、`ir_builder.py`（僅保留 dom_extractor_v2、ir_builder_v2）
+- 版本統一為 0.2.0（`__init__.py`、`pyproject.toml`）
 
 ---
 
