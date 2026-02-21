@@ -33,11 +33,13 @@ class IRBuilderV2:
         framework: str = "vue",
         style_strategy: str = "tailwind",
         entry_file: str = "",
+        smart_flatten: bool = True,
     ):
         self.namer = naming_engine or NamingEngine()
         self.framework = framework
         self.style_strategy = style_strategy
         self.entry_file = entry_file
+        self.smart_flatten = smart_flatten
         self.name_mapping: dict[str, dict] = {}
         self._node_count = 0
 
@@ -67,6 +69,13 @@ class IRBuilderV2:
     def _convert_node(self, raw: dict, parent_path: str) -> Optional[dict]:
         if not raw:
             return None
+
+        # ─── Smart Flattening (Step 2) ───
+        # If this node is a useless wrapper, skip it and process its child.
+        if self.smart_flatten and self._should_flatten(raw):
+            # Only one child (guaranteed by _should_flatten)
+            # Use the SAME parent_path so the child takes this node's place in hierarchy
+            return self._convert_node(raw["children"][0], parent_path)
 
         self._node_count += 1
         tag = raw.get("tag", "div")
@@ -188,6 +197,89 @@ class IRBuilderV2:
             ir_node["children"] = all_children
 
         return ir_node
+
+    def _should_flatten(self, raw: dict) -> bool:
+        """
+        Smart Flattening: Determine if a node is a useless wrapper.
+        Criteria:
+        1. Has exactly one element child (and no text content).
+        2. No visual styling (bg, border, shadow).
+        3. No layout semantic (not a grid/flex container itself - or trivial one).
+        4. Not a component root (preserve components).
+        5. No explicit naming (data-figma-name).
+        """
+        # 1. Check children
+        children = raw.get("children", [])
+        if len(children) != 1:
+            return False
+        
+        # If the single child is just text node, don't flatten (it might be a container for text)
+        # unless it's a pure span wrapping text?
+        # Let's be safe: only flatten if child is an element.
+        if children[0].get("isTextNode"):
+            return False
+
+        # 2. Check type/semantics
+        tag = raw.get("tag", "div")
+        if tag not in ("div", "span", "section", "article"):
+            return False
+        
+        # Don't flatten if it's a detected component root
+        if raw.get("componentName"):
+            return False
+            
+        # Don't flatten if explicitly named
+        if raw.get("attrs", {}).get("data-figma-name"):
+            return False
+
+        # Don't flatten if it has an ID (usually significant)
+        if raw.get("attrs", {}).get("id"):
+            return False
+
+        # 3. Check Visuals
+        styles = raw.get("styles", {})
+        
+        # Background
+        if styles.get("backgroundColor") or styles.get("backgroundImage") or styles.get("gradient"):
+            return False
+            
+        # Border
+        if styles.get("border"):
+            return False
+        if styles.get("borderRadius"):
+            return False
+            
+        # Shadows
+        if styles.get("boxShadow") or styles.get("textShadow"):
+            return False
+            
+        # Overflow/Clip
+        overflow = styles.get("overflow") or styles.get("overflowX") or styles.get("overflowY")
+        if overflow in ("hidden", "scroll", "auto", "clip"):
+            return False
+
+        # 4. Check Layout
+        # If it has grid/flex, it might be doing layout for its single child.
+        # But if it has only ONE child, flex/grid properties on the parent might not matter much
+        # UNLESS they add padding or alignment.
+        
+        # If it adds padding, we can't flatten (padding would be lost).
+        if (styles.get("paddingTop") or styles.get("paddingRight") or 
+            styles.get("paddingBottom") or styles.get("paddingLeft")):
+            return False
+
+        # If it has a specific width/height that constrains the child?
+        # DOM extractor gives us computed width/height.
+        # If we remove the parent, the child still has its own dimensions.
+        # But if the parent was `position: relative` and child `absolute`?
+        if styles.get("position", "static") != "static":
+            return False
+            
+        # If it has transform/opacity
+        if raw.get("transform") or (styles.get("opacity", 1) < 1):
+            return False
+
+        return True
 
     # ════════════════════════════════════════════════════════════
     # Type Determination

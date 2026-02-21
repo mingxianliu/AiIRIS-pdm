@@ -46,7 +46,7 @@ async def cmd_push(args, config: dict):
         viewport_width=viewport.get("width", 1440),
         viewport_height=viewport.get("height", 900),
         framework=config.get("source", {}).get("framework", "html"),
-        root_selector=args.root or "#app, #root, #__nuxt, body",
+        root_selector=args.selector or args.root or "#app, #root, #__nuxt, body",
     )
 
     print("   [1/4] Extracting DOM tree...")
@@ -202,7 +202,8 @@ def main():
     push_p = sub.add_parser("push", help="Code → Figma")
     push_p.add_argument("url", help="App URL (e.g. http://localhost:5173)")
     push_p.add_argument("--viewport", help="WxH e.g. 375x812")
-    push_p.add_argument("--root", help="Root selector")
+    push_p.add_argument("--root", help="Root selector (deprecated, use --selector)")
+    push_p.add_argument("--selector", help="Partial sync: CSS selector to capture (e.g. '#login-form')")
     push_p.add_argument("--erslice", action="store_true", help="Write ErSlice manifest & completeness")
     push_p.add_argument("--erslice-module", default="default", help="Module name for manifest")
     push_p.add_argument("--erslice-page", default="page", help="Page slug for manifest")
