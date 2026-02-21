@@ -98,29 +98,43 @@ python -m airis_pdm.cli pull --file-key YOUR_FILE_KEY --apply
 ```
 AiIRIS-pdm/
 ├── README.md
+├── CHANGELOG.md
 ├── pyproject.toml
-├── requirements.txt
-├── airis_pdm/                  # 主套件
+├── figma-sync.config.json      # 設定範例
+├── airis_pdm/                  # 主套件（Python 0.2.0）
 │   ├── __init__.py
-│   ├── naming_engine.py        # 命名引擎（核心）
-│   ├── dom_extractor.py        # DOM 擷取（完整保真：gradient、shadow、SVG、grid 等）
-│   ├── ir_builder.py           # DOM → IR 2.0
-│   ├── figma_reader.py         # Figma REST API + IR Diff
-│   ├── code_patcher.py         # IR diff → 原始碼 patch
+│   ├── cli.py                  # CLI：push / pull / preview
 │   ├── config.py               # 設定載入
-│   ├── design_assets.py        # ErSlice 風格 manifest / tokens 輔助
-│   └── cli.py                  # CLI 入口
+│   ├── dom_extractor.py        # Playwright + DOM Walker，擷取 DOM 樹與樣式
+│   ├── ir_builder.py           # DOM → IR 2.0、save_ir 寫出 JSON
+│   ├── naming_engine.py        # 命名引擎（data-figma-name → 組件 → id → class → fallback）
+│   ├── figma_reader.py         # Figma REST API、FigmaToIR、IRDiffer
+│   ├── code_patcher.py         # IR diff → 原始碼 patch
+│   └── design_assets.py        # ErSlice 風格 manifest / completeness（選用）
+├── figma_plugin/               # 內建 Figma Plugin（TypeScript）
+│   ├── src/code.ts
+│   ├── src/figma.d.ts
+│   └── dist/code.js            # npm run build 產出
 ├── schemas/
 │   └── ir_schema.json          # IR JSON Schema
-├── figma-sync.config.json      # 設定範例
 ├── examples/
 │   └── login-page-payload.json
 ├── tests/
-│   └── test_smoke.py           # 匯入與 API smoke 測試
+│   ├── test_smoke.py           # 匯入、公開 API、build_ir_from_extraction
+│   ├── test_ir_flattening.py
+│   └── fixtures/
+│       └── minimal.html       # E2E push 用
 └── docs/
-    ├── ERSLICE_INTEGRATION.md  # 與 ErSlice 對齊說明
-    └── COMPARISON_V2.md        # 管線功能矩陣（vs html-figma）
+    ├── INDEX.md                # 文件索引（本專案整理）
+    ├── ARCHITECTURE_CURRENT.md # 目前架構對照
+    ├── ARCHITECTURE_REVIEW.md  # 架構審查與 Token 說明
+    ├── PUSH_FLOW.md            # Push 程式碼流程
+    ├── COMPARISON_V2.md        # 管線功能矩陣
+    ├── ERSLICE_INTEGRATION.md  # 與 ErSlice 對齊
+    └── INSIGHT_AiIRIS-tdd_vs_AiIRIS-pdm.md  # 與 AiIRIS-tdd 對照
 ```
+
+**完整專案整理與文件索引**：[docs/INDEX.md](docs/INDEX.md)
 
 ### 管線（單一、完整保真）
 
