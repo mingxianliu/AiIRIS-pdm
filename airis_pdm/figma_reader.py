@@ -57,6 +57,8 @@ class FigmaToIR:
         node_type = figma_node.get("type", "FRAME")
         name = figma_node.get("name", "Unnamed")
         bbox = figma_node.get("absoluteBoundingBox", {})
+        # 先取 children，後續 Layout Integrity 判斷需要用到
+        children = figma_node.get("children", [])
 
         ir_node = {
             "figmaName": name,
@@ -76,6 +78,9 @@ class FigmaToIR:
             if auto_layout:
                 ir_node["autoLayout"] = auto_layout
                 ir_node["figmaType"] = "AUTO_LAYOUT"
+            elif len(children) > 0:
+                # Layout Integrity：有子節點但無 Auto Layout 時警告
+                ir_node["_layoutWarning"] = "NO_AUTO_LAYOUT"
         if node_type == "TEXT":
             text_data = self._extract_text(figma_node)
             if text_data:
@@ -84,7 +89,6 @@ class FigmaToIR:
         our_data = shared_data.get(self.plugin_namespace, {})
         if our_data:
             ir_node["pluginData"] = our_data
-        children = figma_node.get("children", [])
         if children:
             ir_node["children"] = [
                 self.convert(c) for c in children
@@ -104,13 +108,44 @@ class FigmaToIR:
 
     def _extract_styles(self, node: dict) -> Optional[dict]:
         result = {}
+        fills_ir = []
         for fill in node.get("fills", []):
-            if fill.get("visible", True) and fill.get("type") == "SOLID":
+            if not fill.get("visible", True):
+                continue
+            fill_type = fill.get("type", "")
+            if fill_type == "SOLID":
                 c = fill.get("color", {})
-                r, g, b = int(c.get("r", 0) * 255), int(c.get("g", 0) * 255), int(c.get("b", 0) * 255)
+                r = int(c.get("r", 0) * 255)
+                g = int(c.get("g", 0) * 255)
+                b = int(c.get("b", 0) * 255)
                 a = fill.get("opacity", c.get("a", 1))
+                fills_ir.append({
+                    "type": "SOLID",
+                    "color": f"rgba({r}, {g}, {b}, {a})",
+                })
+                # 回相容舊格式
                 result["backgroundColor"] = f"rgba({r}, {g}, {b}, {a})"
                 break
+            elif fill_type in ("GRADIENT_LINEAR", "GRADIENT_RADIAL", "GRADIENT_ANGULAR"):
+                stops_raw = fill.get("gradientStops", [])
+                stops = []
+                for stop in stops_raw:
+                    c = stop.get("color", {})
+                    r = int(c.get("r", 0) * 255)
+                    g = int(c.get("g", 0) * 255)
+                    b_val = int(c.get("b", 0) * 255)
+                    a = c.get("a", 1)
+                    stops.append({
+                        "color": f"rgba({r}, {g}, {b_val}, {a})",
+                        "position": round(stop.get("position", 0), 3),
+                    })
+                fills_ir.append({
+                    "type": fill_type,
+                    "stops": stops,
+                })
+                break
+        if fills_ir:
+            result["fills"] = fills_ir
         if node.get("opacity") is not None and node["opacity"] < 1:
             result["opacity"] = node["opacity"]
         cr = node.get("cornerRadius")
@@ -238,4 +273,9 @@ class IRDiffer:
         for key in set(list(b_al.keys()) + list(a_al.keys())):
             if b_al.get(key) != a_al.get(key):
                 changes[f"autoLayout.{key}"] = {"before": b_al.get(key), "after": a_al.get(key)}
+        
+        # Integrity check ✨ NEW
+        if after.get("_layoutWarning"):
+            changes["layout.integrity"] = {"warning": after["_layoutWarning"]}
+            
         return changes if changes else None

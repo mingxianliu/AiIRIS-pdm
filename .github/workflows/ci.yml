@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-${{ matrix.python-version }}-
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run tests
+        run: |
+          python -m pytest tests/ -v --tb=short
+
+  # ── Figma Plugin TypeScript 型別檢查 ──────────────────────────────
+  plugin-typecheck:
+    name: Figma Plugin TypeScript
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: figma_plugin/package-lock.json
+
+      - name: Install plugin dependencies
+        run: |
+          cd figma_plugin
+          npm ci
+
+      - name: TypeScript type check
+        run: |
+          cd figma_plugin
+          npx tsc --noEmit
+
+      - name: Build plugin
+        run: |
+          cd figma_plugin
+          npm run build
+
+      - name: Upload plugin artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: figma-plugin-dist
+          path: figma_plugin/dist/
+          retention-days: 7
+
+  # ── 版本一致性檢查 ─────────────────────────────────────────────────
+  version-check:
+    name: Version Consistency
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check version consistency
+        run: |
+          python -c "
+          import re
+
+          # pyproject.toml
+          with open('pyproject.toml') as f:
+              pyproject = f.read()
+          toml_ver = re.search(r'version = \"([^\"]+)\"', pyproject).group(1)
+
+          # __init__.py
+          with open('airis_pdm/__init__.py') as f:
+              init = f.read()
+          init_ver = re.search(r'__version__ = \"([^\"]+)\"', init).group(1)
+
+          # cli.py --version
+          with open('airis_pdm/cli.py') as f:
+              cli = f.read()
+          cli_ver = re.search(r'version=.*%(prog)s ([0-9.]+)', cli)
+          cli_ver = cli_ver.group(1) if cli_ver else None
+
+          print(f'pyproject.toml : {toml_ver}')
+          print(f'__init__.py    : {init_ver}')
+          print(f'cli.py         : {cli_ver}')
+
+          assert toml_ver == init_ver, f'Version mismatch: pyproject={toml_ver} vs __init__={init_ver}'
+          if cli_ver:
+              assert toml_ver == cli_ver, f'Version mismatch: pyproject={toml_ver} vs cli={cli_ver}'
+          print('✅ All versions match:', toml_ver)
+          "

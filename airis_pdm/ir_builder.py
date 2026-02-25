@@ -34,12 +34,18 @@ class IRBuilderV2:
         style_strategy: str = "tailwind",
         entry_file: str = "",
         smart_flatten: bool = True,
+        cjk_font_family: "list[str] | str" = "Noto Sans TC",
     ):
         self.namer = naming_engine or NamingEngine()
         self.framework = framework
         self.style_strategy = style_strategy
         self.entry_file = entry_file
         self.smart_flatten = smart_flatten
+        # Ensure it's a list for internal consistency
+        if isinstance(cjk_font_family, str):
+            self.cjk_font_family = [cjk_font_family]
+        else:
+            self.cjk_font_family = cjk_font_family
         self.name_mapping: dict[str, dict] = {}
         self._node_count = 0
 
@@ -65,6 +71,15 @@ class IRBuilderV2:
     # ════════════════════════════════════════════════════════════
     # Node Conversion
     # ════════════════════════════════════════════════════════════
+
+    def _detect_cjk(self, text: str) -> bool:
+        """Detect if text contains CJK characters."""
+        if not text:
+            return False
+        for char in text:
+            if '\u4e00' <= char <= '\u9fff':
+                return True
+        return False
 
     def _convert_node(self, raw: dict, parent_path: str) -> Optional[dict]:
         if not raw:
@@ -493,6 +508,16 @@ class IRBuilderV2:
         if styles.get("whiteSpace") == "nowrap":
             text_data["maxLines"] = 1
 
+        # CJK Font Fallback ✨ NEW
+        if self._detect_cjk(text_data["characters"]):
+            # If current font is the default system font or Inter, force CJK font
+            current_font = text_data["fontFamily"]
+            if current_font in ("Inter", "system-ui", "sans-serif", "-apple-system"):
+                # Use the first preferred font as primary
+                text_data["fontFamily"] = self.cjk_font_family[0]
+                # Provide the full stack for the plugin to try
+                text_data["fontFamilyStack"] = self.cjk_font_family
+
         return text_data
 
     # ════════════════════════════════════════════════════════════
@@ -603,12 +628,14 @@ def build_ir_from_extraction(extraction_result: dict, config: dict) -> dict:
 
     naming_engine = NamingEngine(naming_config)
     source_config = config.get("source", {})
+    export_config = config.get("export", {})
 
     builder = IRBuilderV2(
         naming_engine=naming_engine,
         framework=source_config.get("framework", "html"),
         style_strategy=source_config.get("styleStrategy", "inline"),
         entry_file=source_config.get("entryUrl", ""),
+        cjk_font_family=export_config.get("cjkFontFamily", ["PingFang TC", "Microsoft JhengHei", "Noto Sans TC", "sans-serif"]),
     )
 
     return builder.build(

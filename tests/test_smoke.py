@@ -7,7 +7,7 @@ import pytest
 def test_import_package():
     """套件可正常匯入"""
     import airis_pdm
-    assert airis_pdm.__version__ == "0.2.0"
+    assert airis_pdm.__version__ == "0.4.0"
 
 
 def test_public_api():
@@ -24,7 +24,7 @@ def test_public_api():
         preview_naming_tree,
         load_config,
     )
-    assert __version__ == "0.2.0"
+    assert __version__ == "0.4.0"
     assert IRBuilder is IRBuilderV2
     assert callable(extract_dom_tree)
     assert callable(build_ir_from_extraction)

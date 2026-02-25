@@ -9,11 +9,12 @@
 | 項目 | 說明 |
 |------|------|
 | **名稱** | AiIRIS-pdm（AiIRIS Project Design Model） |
-| **版本** | 0.2.0 |
-| **用途** | Code ↔ Figma 雙向同步：Push（網頁 URL → IR → Figma）、Pull（Figma API → diff → patch） |
-| **輸入** | Push：網站 URL（如 `http://localhost:5173`）；Pull：Figma file key + FIGMA_TOKEN |
+| **版本** | 0.3.0 |
+| **用途** | Code ↔ Figma 雙向同步 + DesignOps：Push / Pull / **Watch** / **Storybook Sync**，含 Smart Image、CJK Font、Layout Integrity |
+| **輸入** | Push：網站 URL；Watch：URL + 監聽 srcRoot；push-stories：Storybook URL；Pull：file key + FIGMA_TOKEN |
 | **產出** | `.figma-sync/`：plugin-payload.json、figma-import-payload.json、name-mapping.json、reference-screenshot.png |
-| **技術** | Python 3.10+、Playwright、requests；Figma Plugin：TypeScript → dist/code.js |
+| **技術** | Python 3.10+、Playwright、requests、**watchdog**；Figma Plugin：TypeScript → dist/code.js |
+| **五大功能 (0.3.0)** | 1 Watch Mode 2 Storybook Sync 3 Smart Image Compression 4 Smart CJK Font 5 Layout Integrity Check — 見 CHANGELOG |
 
 ---
 
@@ -84,7 +85,7 @@
 ## 四、常用指令速查
 
 ```bash
-# 安裝
+# 安裝（含 watchdog，Watch 必要）
 pip install -e ".[dev]"
 playwright install chromium
 
@@ -93,10 +94,16 @@ figma-sync push http://localhost:5173
 figma-sync push http://localhost:5173 --viewport 375x812
 figma-sync preview http://localhost:5173
 
+# Watch（即時監聽並自動 Push）
+figma-sync watch http://localhost:5173
+
+# Storybook 批次同步（6.4+）
+figma-sync push-stories http://localhost:6006
+
 # Figma Plugin 建置
 cd figma_plugin && npm run build
 
-# Pull（需 FIGMA_TOKEN）
+# Pull（需 FIGMA_TOKEN；會顯示 Layout Integrity 警告若適用）
 export FIGMA_TOKEN=...
 figma-sync pull --file-key YOUR_FILE_KEY
 figma-sync pull --file-key YOUR_FILE_KEY --apply

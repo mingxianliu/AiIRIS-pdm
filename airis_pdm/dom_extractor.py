@@ -565,14 +565,27 @@ DOM_WALKER_V2_JS = """
     function captureImageData(el) {
         if (!config.captureImageData) return null;
 
+        const MAX_DIM = 1024;
+
         // <img> element
         if (el.tagName === 'IMG' && el.complete && el.naturalWidth > 0) {
             try {
+                let w = el.naturalWidth;
+                let h = el.naturalHeight;
+                if (w > MAX_DIM || h > MAX_DIM) {
+                    const scale = Math.min(MAX_DIM / w, MAX_DIM / h);
+                    w *= scale;
+                    h *= scale;
+                }
+
                 const canvas = getCaptureCanvas();
-                canvas.width = Math.min(el.naturalWidth, 800);
-                canvas.height = Math.min(el.naturalHeight, 800);
+                canvas.width = w;
+                canvas.height = h;
                 const ctx = canvas.getContext('2d');
-                ctx.drawImage(el, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(el, 0, 0, w, h);
+                // JPEG 0.85 offers good balance, but lacks transparency.
+                // PNG is safer for UI elements (logos, icons).
+                // Let's use PNG for correctness, resizing limits the size enough.
                 return canvas.toDataURL('image/png').split(',')[1];
             } catch (e) { /* CORS */ }
         }
@@ -580,6 +593,21 @@ DOM_WALKER_V2_JS = """
         // <canvas> element
         if (el.tagName === 'CANVAS' && config.captureCanvas) {
             try {
+                // We can't easily resize a canvas without drawing it to another canvas
+                // If it's huge, let's skip or try to scale down
+                let w = el.width;
+                let h = el.height;
+                 if (w > MAX_DIM || h > MAX_DIM) {
+                    const scale = Math.min(MAX_DIM / w, MAX_DIM / h);
+                    w *= scale;
+                    h *= scale;
+                    const canvas = getCaptureCanvas();
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(el, 0, 0, w, h);
+                    return canvas.toDataURL('image/png').split(',')[1];
+                }
                 return el.toDataURL('image/png').split(',')[1];
             } catch (e) {}
         }

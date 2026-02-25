@@ -1,12 +1,23 @@
 {
   "name": "airis-pdm-figma-plugin",
-  "version": "0.1.0",
+  "version": "0.4.0",
   "private": true,
   "scripts": {
     "build": "tsc && cp src/ui.html dist/ui.html",
-    "prebuild": "mkdir -p dist"
+    "prebuild": "mkdir -p dist",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest",
+    "test:watch": "jest --watch"
   },
   "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "jest": "^29.7.0",
+    "jest-environment-node": "^29.0.0",
     "typescript": "^5.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/__tests__/**/*.test.js"
+    ]
   }
 }

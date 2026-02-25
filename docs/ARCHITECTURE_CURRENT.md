@@ -7,8 +7,8 @@
 ## 一、定位與版本
 
 - **專案**：AiIRIS-pdm（AiIRIS Project Design Model）
-- **版本**：0.2.0（`airis_pdm/__init__.py`、`pyproject.toml`）
-- **用途**：Code ↔ Figma 雙向同步（Python 管線 + 內建 Figma Plugin）
+- **版本**：0.3.0（`airis_pdm/__init__.py`、`pyproject.toml`）
+- **用途**：Code ↔ Figma 雙向同步 + DesignOps（Push / Pull / Watch / Storybook Sync、Smart Image、CJK Font、Layout Integrity）
 
 ---
 
@@ -68,8 +68,10 @@
 | 指令 | 說明 | Token |
 |------|------|--------|
 | `figma-sync push <url>` | Code → 擷取 DOM → IR → 寫出 `.figma-sync/*.json` | 不需 |
+| `figma-sync watch <url>` | 監聽 srcRoot 檔案變更並自動 Push | 不需 |
+| `figma-sync push-stories <url>` | 從 Storybook 批次擷取 stories → 多元件 IR | 不需 |
 | `figma-sync preview <url>` | 僅預覽命名樹，不寫檔 | 不需 |
-| `figma-sync pull --file-key KEY [--apply]` | Figma API 讀檔 → IR diff → 報告（或寫回碼） | 需要 |
+| `figma-sync pull --file-key KEY [--apply]` | Figma API 讀檔 → IR diff → 報告（含 Layout Integrity 警告）或寫回碼 | 需要 |
 
 - 入口：`airis_pdm/cli.py`（或 `python -m airis_pdm.cli`）；安裝後亦可使用 `figma-sync`（pyproject script）。
 
