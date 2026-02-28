@@ -361,6 +361,10 @@ function buildEffects(irEffects: IREffect[]): Effect[] {
 
 const PLUGIN_NS = 'figma-code-sync';
 const DEFAULT_FONT: FontName = { family: 'Inter', style: 'Regular' };
+const STYLE_GUIDE_PAGE_NAME = 'Style Guide';
+const STYLE_GUIDE_ROOT_KEY = 'styleGuideRoot';
+const STYLE_GUIDE_TAG_KEY = 'styleGuideTag';
+const STYLE_GUIDE_SIGNATURE_KEY = 'styleGuideSignature';
 
 function collectFonts(node: IRNode, fonts: Set<string>): void {
   if (node.text) {
@@ -393,6 +397,291 @@ async function loadAllFonts(fonts: Set<string>): Promise<void> {
       catch { console.warn(`Font unavailable: ${family} ${style}`); }
     }
   }
+}
+
+function normalizeClassList(classes: string): string[] {
+  if (!classes) return [];
+  return classes
+    .split(/\s+/)
+    .map((cls) => cls.trim())
+    .filter(Boolean)
+    .sort();
+}
+
+function serializeTagTree(node: IRNode, maxDepth: number = 2, maxNodes: number = 50): string {
+  const tokens: string[] = [];
+  let count = 0;
+
+  function walk(current: IRNode, depth: number): void {
+    if (count >= maxNodes) return;
+    const tag = current.htmlTag || 'div';
+    tokens.push(`${depth}:${tag}`);
+    count += 1;
+    if (depth >= maxDepth) return;
+    for (const child of current.children || []) {
+      if (count >= maxNodes) break;
+      walk(child, depth + 1);
+    }
+  }
+
+  walk(node, 0);
+  return tokens.join(',');
+}
+
+function summarizeStyles(node: IRNode): string {
+  const parts: string[] = [];
+  const styles = node.styles || {};
+
+  if (styles.fills && styles.fills.length > 0) {
+    const fill = styles.fills[0];
+    if (fill.type === 'SOLID' && fill.color) {
+      parts.push(`fill:${fill.color}`);
+    } else {
+      parts.push(`fill:${fill.type}`);
+    }
+  }
+
+  if (styles.borderRadius) {
+    const br = styles.borderRadius;
+    parts.push(`radius:${br.topLeft},${br.topRight},${br.bottomRight},${br.bottomLeft}`);
+  }
+
+  if (styles.border) {
+    const width = styles.border.width || 0;
+    const color = styles.border.color || '';
+    parts.push(`border:${width}:${color}`);
+  }
+
+  if (styles.opacity !== undefined) {
+    parts.push(`opacity:${styles.opacity}`);
+  }
+
+  if (node.text) {
+    parts.push(`font:${node.text.fontFamily}|${node.text.fontSize}|${node.text.fontWeight}`);
+    parts.push(`textColor:${node.text.color}`);
+  }
+
+  return parts.join('|');
+}
+
+function summarizeAutoLayout(node: IRNode): string {
+  const al = node.autoLayout;
+  if (!al) return '';
+  return [
+    `dir:${al.direction}`,
+    `space:${al.spacing}`,
+    `pad:${al.paddingTop},${al.paddingRight},${al.paddingBottom},${al.paddingLeft}`,
+    `align:${al.primaryAlign},${al.counterAlign}`,
+    al.wrap ? 'wrap:1' : 'wrap:0',
+  ].join('|');
+}
+
+function bucketDimension(value: number, step: number = 10): string {
+  if (!value || value <= 0) return '0-0';
+  const base = Math.floor(value / step) * step;
+  return `${base}-${base + step}`;
+}
+
+function buildGuideSignature(node: IRNode): string {
+  const tag = node.htmlTag || 'div';
+  const classes = normalizeClassList(node.pluginData?.cssClasses || '');
+  const componentRef = node.componentRef || '';
+  const structure = serializeTagTree(node);
+  const styles = summarizeStyles(node);
+  const autoLayout = summarizeAutoLayout(node);
+  const text = node.text?.characters || '';
+  const widthBucket = bucketDimension(node.layout?.width || 0);
+  const heightBucket = bucketDimension(node.layout?.height || 0);
+
+  return [
+    `tag:${tag}`,
+    `class:${classes.join('.')}`,
+    componentRef ? `component:${componentRef}` : 'component:',
+    `structure:${structure}`,
+    `styles:${styles}`,
+    `layout:${autoLayout}`,
+    `text:${text}`,
+    `size:${widthBucket}x${heightBucket}`,
+  ].join('||');
+}
+
+type GuideItem = {
+  signature: string;
+  tag: string;
+  label: string;
+  node: IRNode;
+};
+
+function collectGuideItems(irNode: IRNode, items: Map<string, GuideItem>): void {
+  const tag = irNode.htmlTag || 'div';
+  const classes = normalizeClassList(irNode.pluginData?.cssClasses || '');
+  const componentRef = irNode.componentRef || '';
+
+  if (classes.length > 0 || componentRef) {
+    const signature = buildGuideSignature(irNode);
+    if (!items.has(signature)) {
+      const label = classes.length > 0
+        ? `<${tag}>.${classes.join('.')}`
+        : `<${tag}> component:${componentRef}`;
+      items.set(signature, { signature, tag, label, node: irNode });
+    }
+  }
+
+  for (const child of irNode.children || []) {
+    collectGuideItems(child, items);
+  }
+}
+
+function findStyleGuidePage(): PageNode | null {
+  for (const page of figma.root.children) {
+    if (page.name === STYLE_GUIDE_PAGE_NAME) return page;
+  }
+  return null;
+}
+
+function ensureStyleGuidePage(): PageNode {
+  const existing = findStyleGuidePage();
+  if (existing) return existing;
+  const page = figma.createPage();
+  page.name = STYLE_GUIDE_PAGE_NAME;
+  return page;
+}
+
+function ensureStyleGuideRoot(page: PageNode): FrameNode {
+  const existing = page.findOne((node) => {
+    if (node.type !== 'FRAME') return false;
+    if (!('getSharedPluginData' in node)) return false;
+    return node.getSharedPluginData(PLUGIN_NS, STYLE_GUIDE_ROOT_KEY) === 'true';
+  }) as FrameNode | null;
+
+  if (existing) return existing;
+
+  const root = figma.createFrame();
+  root.name = 'Style Guide';
+  root.layoutMode = 'VERTICAL';
+  root.primaryAxisSizingMode = 'AUTO';
+  root.counterAxisSizingMode = 'AUTO';
+  root.itemSpacing = 24;
+  root.paddingTop = 24;
+  root.paddingRight = 24;
+  root.paddingBottom = 24;
+  root.paddingLeft = 24;
+  root.fills = [];
+  root.setSharedPluginData(PLUGIN_NS, STYLE_GUIDE_ROOT_KEY, 'true');
+  page.appendChild(root);
+  return root;
+}
+
+function getExistingGuideSections(root: FrameNode): Map<string, FrameNode> {
+  const sections = new Map<string, FrameNode>();
+  for (const child of root.children) {
+    if (child.type !== 'FRAME') continue;
+    const tag = child.getSharedPluginData(PLUGIN_NS, STYLE_GUIDE_TAG_KEY);
+    if (tag) sections.set(tag, child as FrameNode);
+  }
+  return sections;
+}
+
+function getExistingGuideEntries(root: FrameNode): Set<string> {
+  const signatures = new Set<string>();
+  const nodes = root.findAll((node) => {
+    return node.type === 'FRAME' &&
+      node.getSharedPluginData(PLUGIN_NS, STYLE_GUIDE_SIGNATURE_KEY);
+  });
+  for (const node of nodes) {
+    const sig = node.getSharedPluginData(PLUGIN_NS, STYLE_GUIDE_SIGNATURE_KEY);
+    if (sig) signatures.add(sig);
+  }
+  return signatures;
+}
+
+async function createSectionLabel(section: FrameNode, text: string): Promise<void> {
+  await figma.loadFontAsync(DEFAULT_FONT);
+  const label = figma.createText();
+  label.fontName = DEFAULT_FONT;
+  label.fontSize = 14;
+  label.characters = text;
+  section.appendChild(label);
+}
+
+function ensureGuideSection(root: FrameNode, tag: string, existing: Map<string, FrameNode>): FrameNode {
+  const found = existing.get(tag);
+  if (found) return found;
+
+  const section = figma.createFrame();
+  section.name = `Tag: ${tag}`;
+  section.layoutMode = 'VERTICAL';
+  section.primaryAxisSizingMode = 'AUTO';
+  section.counterAxisSizingMode = 'AUTO';
+  section.itemSpacing = 16;
+  section.paddingTop = 16;
+  section.paddingRight = 16;
+  section.paddingBottom = 16;
+  section.paddingLeft = 16;
+  section.fills = [];
+  section.setSharedPluginData(PLUGIN_NS, STYLE_GUIDE_TAG_KEY, tag);
+  root.appendChild(section);
+  return section;
+}
+
+async function createGuideEntry(section: FrameNode, item: GuideItem): Promise<void> {
+  const entry = figma.createFrame();
+  entry.name = item.label;
+  entry.layoutMode = 'VERTICAL';
+  entry.primaryAxisSizingMode = 'AUTO';
+  entry.counterAxisSizingMode = 'AUTO';
+  entry.itemSpacing = 8;
+  entry.paddingTop = 8;
+  entry.paddingRight = 8;
+  entry.paddingBottom = 8;
+  entry.paddingLeft = 8;
+  entry.fills = [];
+  entry.setSharedPluginData(PLUGIN_NS, STYLE_GUIDE_SIGNATURE_KEY, item.signature);
+  section.appendChild(entry);
+
+  await figma.loadFontAsync(DEFAULT_FONT);
+  const label = figma.createText();
+  label.fontName = DEFAULT_FONT;
+  label.fontSize = 12;
+  label.characters = item.label;
+  entry.appendChild(label);
+
+  await createNodeFromIR(item.node, entry, item.node.layout.x, item.node.layout.y);
+}
+
+async function buildStyleGuide(irTree: IRNode): Promise<void> {
+  const guideItems = new Map<string, GuideItem>();
+  collectGuideItems(irTree, guideItems);
+  if (guideItems.size === 0) return;
+
+  const originalPage = figma.currentPage;
+  const styleGuidePage = ensureStyleGuidePage();
+  figma.currentPage = styleGuidePage;
+
+  const root = ensureStyleGuideRoot(styleGuidePage);
+  const sections = getExistingGuideSections(root);
+  const existingEntries = getExistingGuideEntries(root);
+
+  const sortedItems = Array.from(guideItems.values()).sort((a, b) => {
+    if (a.tag === b.tag) return a.signature.localeCompare(b.signature);
+    return a.tag.localeCompare(b.tag);
+  });
+
+  const createdTags = new Set<string>();
+  for (const item of sortedItems) {
+    if (existingEntries.has(item.signature)) continue;
+    const section = ensureGuideSection(root, item.tag, sections);
+    if (!sections.has(item.tag)) {
+      sections.set(item.tag, section);
+    }
+    if (!createdTags.has(item.tag) && section.children.length === 0) {
+      await createSectionLabel(section, `Tag: ${item.tag}`);
+    }
+    await createGuideEntry(section, item);
+    createdTags.add(item.tag);
+  }
+
+  figma.currentPage = originalPage;
 }
 
 // ─── Main node builder ───
@@ -853,6 +1142,9 @@ figma.ui.onmessage = async (msg: any) => {
       type: 'import-complete',
       nodeCount: countNodes(irTree),
     });
+
+    figma.ui.postMessage({ type: 'status', text: '🧩 Building style guide...' });
+    await buildStyleGuide(irTree);
   }
 
   if (msg.type === 'export-tree') {

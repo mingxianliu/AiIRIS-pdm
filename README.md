@@ -1,12 +1,12 @@
 # AiIRIS-pdm
 
-**AiIRIS Project Design Model — Code ↔ Figma 雙向同步（Python 版）**
+**AiIRIS Project Design Model — Figma → New Frontend（Python 版）**
 
 [![CI](https://github.com/mingxianliu/AiIRIS-pdm/actions/workflows/ci.yml/badge.svg)](https://github.com/mingxianliu/AiIRIS-pdm/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://python.org)
 [![Version](https://img.shields.io/badge/version-0.4.0-green)](CHANGELOG.md)
 
-將 Vue / React / HTML+CSS+JS 轉換為 Figma 可編輯的設計圖層，保留完整樹狀結構命名；Figma 修改後可回寫到原始碼。  
+從 Figma 直接產生新的前端（React / Vue / HTML / Flutter）。
 彙整 [figma-code-sync](https://github.com/erich/figma-code-sync) 的 IR 管線與 [ErSlice](https://github.com/openclaw/ErSlice) 的設計資產／manifest 概念。
 
 ---
@@ -15,17 +15,10 @@
 
 | 能力 | 說明 |
 |------|------|
-| **Push (Code → Figma)** | Playwright 擷取 DOM → 命名引擎 → IR JSON → Figma Plugin 匯入，100% 命名控制 |
-| **Pull (Figma → Code)** | Figma REST API 讀取 → IR Diff → Code Patcher 回寫 Vue/React/HTML |
-| **Pull --apply** | 實際修改原始碼（`.vue`/`.tsx`/`.css`/`.scss`），支援 Tailwind / CSS Modules / inline 策略 |
-| **Watch Mode** | 監聽檔案變更並自動 Push，即時同步開發中的畫面 |
-| **Storybook Sync** | 批次從 Storybook 擷取 stories，一次產出多元件 IR 供 Figma 匯入 |
-| **Config 驗證** | 載入時自動驗證欄位名稱、值域與型別，提供友善警告 |
-| **Smart Image** | Base64 圖片智慧壓縮（最大 1024px），減少 payload 體積 |
-| **Smart CJK Font** | 中文字體 Fallback 堆疊（fontFamilyStack），跨平台顯示一致 |
-| **Gradient 支援** | Pull 時正確識別 GRADIENT_LINEAR / RADIAL / ANGULAR，不再誤判為「背景色消失」 |
-| **Layout Integrity** | Pull 時偵測 Auto Layout 損壞並警告，回寫保護 |
-| **命名優先順序** | `data-figma-name` → 組件名 → id → 語意 class → ARIA/tag → fallback |
+| **Generate (Figma → New Frontend)** | 讀取 Figma → IR → 產出 React/Vue/HTML/Flutter 專案檔 |
+| **Component/Variant 規則** | `Button/Primary` → Component `Button`、Variant `Primary` |
+| **分離 CSS** | 產生 `styles/app.css`，可選 `utility.css` |
+| **多頁 HTML** | `index.html` 渲染第一頁，`pages/*.html` 保留所有頁面 |
 | **ErSlice 對齊** | 可輸出 design-assets 友善的 manifest、設計 token 索引（選用） |
 
 ---
@@ -33,21 +26,28 @@
 ## 架構
 
 ```
+Input: Figma file (fileKey) + FIGMA_TOKEN
+
                     ┌─────────────────────────┐
                     │    IR (JSON Schema)     │
                     │  中間表示層 — 統一契約   │
-                    └──────┬──────────┬────────┘
-                           │          │
-             ┌─────────────▼──┐  ┌────▼──────────────┐
-             │  AiIRIS-pdm    │  │  Figma Plugin 端   │
-             │  (Python)      │  │  (figma_plugin/)   │
-             │ • DOM 擷取     │  │ • 讀取 IR JSON     │
-             │ • 命名引擎     │  │ • 建立節點 .name   │
-             │ • IR 建構      │  │ • pluginData 回寫  │
-             │ • Figma API 讀 │  │                    │
-             │ • Diff & Patch │  └────────────────────┘
-             │ • design_assets│
-             └────────────────┘
+                    └──────────┬──────────────┘
+                               │
+             ┌─────────────────▼─────────────────┐
+             │            AiIRIS-pdm             │
+             │            (Python)               │
+             │ • Figma API 讀取                  │
+             │ • FigmaToIR                       │
+             │ • Component/Variant 分組          │
+             │ • 產生 React/Vue/HTML/Flutter     │
+             │ • design_assets（選用）           │
+             └────────────────────────────────────┘
+
+Output (React): ./out/index.html, main.tsx, components/, pages/, styles/
+Output (Vue):   ./out/index.html, main.ts, App.vue, components/, pages/, styles/
+Output (HTML):  ./out/index.html, pages/, styles/
+Output (Flutter): ./out/lib/components/, lib/pages/
+Note: use --with-utility-css to emit styles/utility.css and @import it from app.css.
 ```
 
 ---
@@ -70,118 +70,196 @@ pip install playwright requests watchdog
 playwright install chromium
 ```
 
-### 2. Push: Code → Figma
+### 2. Generate: Figma → New Frontend
+
+## Generate: Figma → New Frontend（不需要 push）
+
+### 必要輸入
+
+- `FIGMA_TOKEN`（或 `figma.personalAccessToken`）
+- `fileKey`（或 `--file-key`）
+- `--target`（react / vue / html / flutter）
+
+### 輸入 / 輸出對照表
+
+| 輸入 | 說明 | 主要輸出 |
+|------|------|----------|
+| `FIGMA_TOKEN` | Figma Personal Access Token | Figma 文件內容可被讀取 |
+| `fileKey` | Figma file key | 生成對應頁面與元件 |
+| `--target react` | 生成 React 專案檔 | `index.html`, `main.tsx`, `components/*.tsx`, `pages/*.tsx`, `*.module.css`, `styles/app.css` |
+| `--target vue` | 生成 Vue 專案檔 | `index.html`, `main.ts`, `App.vue`, `components/*.vue`, `pages/*.vue`, `styles/app.css` |
+| `--target html` | 生成 HTML | `index.html`（多頁時另有 `pages/*.html`）+ `styles/app.css` |
+| `--target flutter` | 生成 Flutter | `lib/components/*.dart`, `lib/pages/*.dart` |
+| `--all-pages` | 匯出所有頁面 | 多頁 HTML：`pages/*.html` + `index.html` 渲染第一頁 |
+| `--with-utility-css` | 產生 utility.css | `styles/utility.css` + `app.css` 自動 `@import` |
+
+### 指令範例
 
 ```bash
-# 預覽命名樹（不實際推送）
-figma-sync preview http://localhost:5173
-figma-sync preview http://localhost:5173 --selector '#sidebar'
-
-# 生成 IR payload
-figma-sync push http://localhost:5173
-figma-sync push http://localhost:5173 --viewport 375x812
-figma-sync push http://localhost:5173 --selector '#login-form'
-
-# Watch：監聽檔案變更並自動 Push（需 config 內 source.srcRoot）
-figma-sync watch http://localhost:5173
-
-# Storybook：批次擷取 stories 轉 Figma 元件（Storybook 6.4+）
-figma-sync push-stories http://localhost:6006
-figma-sync push-stories http://localhost:6006 --filter 'Button'
-```
-
-產出於 `.figma-sync/`：
-- `plugin-payload.json` — Figma Plugin 讀取的 payload
-- `figma-import-payload.json` — 完整 IR
-- `name-mapping.json` — figmaName → sourceFile 對照
-- `reference-screenshot.png` — 參考截圖
-
-### 3. Figma 匯入
-
-1. 本專案內建 **Code-to-Figma Sync** plugin：`cd figma_plugin && npm install && npm run build`，產出 `dist/code.js`、`dist/ui.html`。
-2. 在 Figma 載入該 plugin，選擇 `plugin-payload.json`，點擊 Import to Figma。
-
-### 4. Pull: Figma → Code
-
-#### 4-1. 取得 Figma Token 與 File Key
-
-```bash
-# 1. 前往 Figma → Account Settings → Personal Access Tokens → 建立 token
-# 2. Figma 文件 URL 格式：https://www.figma.com/file/{FILE_KEY}/...
 export FIGMA_TOKEN=figd_xxxxxxxxxxxxxxxxxxxx
+
+# React
+figma-sync generate --file-key YOUR_FILE_KEY --target react --output ./out
+
+# Vue
+figma-sync generate --file-key YOUR_FILE_KEY --target vue --output ./out
+
+# HTML (單頁)
+figma-sync generate --file-key YOUR_FILE_KEY --target html --output ./out
+
+# HTML (多頁)
+figma-sync generate --file-key YOUR_FILE_KEY --target html --output ./out --all-pages
+
+# Flutter
+figma-sync generate --file-key YOUR_FILE_KEY --target flutter --output ./out
+
+# 可選：產生 utility.css（預設不產生）
+figma-sync generate --file-key YOUR_FILE_KEY --target react --output ./out --with-utility-css
 ```
 
-#### 4-2. 預覽 Diff（不修改任何檔案）
+### 實際操作示例
 
 ```bash
-figma-sync pull --file-key YOUR_FILE_KEY
+export FIGMA_TOKEN=figd_xxxxxxxxxxxxxxxxxxxx
+figma-sync generate --file-key YOUR_FILE_KEY --target react --output ./out --all-pages
 ```
 
-輸出範例：
+預期輸出（摘要）：
+
 ```
-📥 Pulling from Figma: YOUR_FILE_KEY
-
-── CHANGED: LoginForm/Button ────────────────────────
-  styles.backgroundColor : rgba(99, 102, 241, 1) → rgba(79, 70, 229, 1)
-  text.fontSize          : 14 → 16
-  styles.borderRadius    : {"topLeft":4,...} → {"topLeft":8,...}
-
-💡 使用 --apply 將變更套用到原始碼（需設定 source.srcRoot）。
+out/
+  index.html
+  main.tsx
+  styles/
+    app.css
+  components/
+    ...
+  pages/
+    ...
 ```
 
-#### 4-3. 套用變更到原始碼（需先設定 `source.srcRoot`）
+### 實際操作示例（Vue）
 
 ```bash
-figma-sync pull --file-key YOUR_FILE_KEY --apply
+export FIGMA_TOKEN=figd_xxxxxxxxxxxxxxxxxxxx
+figma-sync generate --file-key YOUR_FILE_KEY --target vue --output ./out
 ```
 
-這會依照 `figma-sync.config.json` 的 `source.styleStrategy`：
+### 實際操作示例（Flutter）
 
-| strategy | 修改結果 |
-|----------|----------|
-| `tailwind` | 在對應元素的 `class="..."` 中注入 Tailwind class（如 `text-[16px]`、`bg-[#4f46e5]`） |
-| `css-modules` | 找到 `.module.css` 檔案，在對應 selector 中更新/插入 CSS 屬性 |
-| `scss` | 找到 `.scss` 檔案，在對應 selector 中更新/插入 CSS 屬性 |
-| `inline` | 在對應元素的 `style="..."` 中注入 inline style |
+```bash
+export FIGMA_TOKEN=figd_xxxxxxxxxxxxxxxxxxxx
+figma-sync generate --file-key YOUR_FILE_KEY --target flutter --output ./out
+```
 
-**常見錯誤訊息：**
+### 產出結構（摘要）
 
-| 錯誤 | 原因 | 解法 |
+- **React**：`index.html`、`main.tsx`、`components/*.tsx`、`pages/*.tsx`、`*.module.css`、`styles/app.css`
+- **Vue**：`index.html`、`main.ts`、`App.vue`、`components/*.vue`、`pages/*.vue`、`styles/app.css`
+- **HTML**：`index.html`（多頁時另有 `pages/*.html`）+ `styles/app.css`
+- **Flutter**：`lib/components/*.dart`、`lib/pages/*.dart`
+
+> **重要**
+> `styles/app.css` 預設不包含 `utility.css`。若需要此檔，務必加上 `--with-utility-css`，才會輸出 `styles/utility.css` 並在 `app.css` 中 `@import`。
+
+> 多頁 HTML 模式下，`index.html` 會渲染第一頁內容，並保留隱藏的導覽連結（`visually-hidden`）指向 `pages/*.html`。
+
+### CLI 參數（Generate）
+
+| 參數 | 必填 | 說明 |
 |------|------|------|
-| `❌ Figma API 403` | Token 無效或過期 | 至 Figma Account Settings 重新產生 token |
-| `❌ Figma API 404` | file key 錯誤 | 確認 URL 中的 file key 是否正確 |
-| `⚠️ source.srcRoot 未設定` | config 缺少 srcRoot | 設定 `source.srcRoot` 指向原始碼目錄 |
+| `--file-key` | 是 | Figma file key |
+| `--target` | 是 | `react` / `vue` / `html` / `flutter` |
+| `--output` | 否 | 輸出資料夾（預設 `./generated`） |
+| `--page` | 否 | 指定頁面名稱 |
+| `--page-index` | 否 | 指定頁面索引 |
+| `--all-pages` | 否 | 匯出所有頁面 |
+| `--with-utility-css` | 否 | 產生 `styles/utility.css` 並在 `app.css` 中匯入 |
+
+### 範例輸出樹狀（React）
+
+```
+out/
+  index.html
+  main.tsx
+  styles/
+    app.css
+    utility.css (only with --with-utility-css)
+  components/
+    Button.tsx
+    Button.module.css
+  pages/
+    Home.tsx
+    Home.module.css
+```
+
+### 範例輸出樹狀（Vue）
+
+```
+out/
+  index.html
+  main.ts
+  App.vue
+  styles/
+    app.css
+    utility.css (only with --with-utility-css)
+  components/
+    Button.vue
+  pages/
+    Home.vue
+```
+
+### 範例輸出樹狀（HTML）
+
+```
+out/
+  index.html
+  pages/
+    Home.html
+    Pricing.html
+  styles/
+    app.css
+    utility.css (only with --with-utility-css)
+```
+
+### 範例輸出樹狀（Flutter）
+
+```
+out/
+  lib/
+    components/
+      button.dart
+    pages/
+      home.dart
+```
+
+### 命名規則（Component / Variant）
+
+Generator 會依 Figma layer name 拆解成 `Component/Variant`：
+
+- `Button/Primary` → Component: `Button`、Variant: `Primary`
+- `Card` → Component: `Card`、Variant: `Default`
+
+當 Figma node 是 `COMPONENT`/`INSTANCE` 時，會優先視為可生成的元件。
 
 ---
 
-## 設定範例
+## Legacy: Push / Pull / Watch
 
-`figma-sync.config.json`：
+舊流程（Code ↔ Figma 雙向同步）已移到 [docs/LEGACY_PUSH_PULL.md](docs/LEGACY_PUSH_PULL.md)。
+
+### Generate 設定範例（可選）
+
+`figma-sync.config.json` 只要包含 figma 區塊即可：
 
 ```json
 {
   "figma": {
     "personalAccessToken": "figd_xxxxxxxxxxxxxxxxxxxx",
     "fileKey": "YOUR_FILE_KEY"
-  },
-  "source": {
-    "framework": "vue",
-    "styleStrategy": "tailwind",
-    "entryUrl": "http://localhost:5173",
-    "srcRoot": "./src"
-  },
-  "viewport": { "width": 1440, "height": 900 },
-  "naming": {
-    "separator": "/",
-    "ignoreClasses": ["flex", "grid", "p-", "m-", "text-", "bg-"]
-  },
-  "export": {
-    "snapshotDir": ".figma-sync"
   }
 }
 ```
-
-> **`source.srcRoot`**：Pull `--apply` 時必須設定，指向放置元件原始碼的目錄（如 `./src`），用於搜尋對應的 `.vue`/`.tsx`/`.css` 等檔案。
 
 ---
 

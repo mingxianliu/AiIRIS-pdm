@@ -22,6 +22,7 @@ from .figma_reader import FigmaAPIClient, FigmaToIR, IRDiffer
 from .code_patcher import CodePatcher, find_files_by_selector, url_to_local_path
 from .config import load_config, validate_config
 from . import design_assets
+from .generator import generate_project
 
 __all__ = [
     "__version__",
@@ -46,4 +47,5 @@ __all__ = [
     "load_config",
     "validate_config",
     "design_assets",
+    "generate_project",
 ]

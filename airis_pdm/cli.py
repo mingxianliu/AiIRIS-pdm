@@ -30,6 +30,7 @@ from .ir_builder import build_ir_from_extraction, save_ir
 from .figma_reader import FigmaAPIClient, FigmaToIR, IRDiffer
 from .code_patcher import CodePatcher
 from .config import load_config
+from .generator import generate_project
 
 
 def _count_nodes(tree: dict) -> int:
@@ -412,6 +413,40 @@ def cmd_pull(args, config: dict):
     print(f"   📄 Diff saved to {diff_path}")
 
 
+def cmd_generate(args, config: dict):
+    """Generate: 從 Figma 產生新前端（不需要 push 快照）."""
+    figma_cfg = config.get("figma", {})
+    token = figma_cfg.get("personalAccessToken") or os.environ.get("FIGMA_TOKEN")
+    file_key = figma_cfg.get("fileKey") or args.file_key
+
+    if not token:
+        print("❌ 請設定 FIGMA_TOKEN 環境變數，或在 figma-sync.config.json 的 figma.personalAccessToken 設定。")
+        return
+    if not file_key:
+        print("❌ 請使用 --file-key 或在 config 的 figma.fileKey 設定 Figma 檔案 key。")
+        return
+
+    target = (args.target or "html").lower()
+    output_dir = args.output or "./generated"
+
+    try:
+        generate_project(
+            figma_token=token,
+            file_key=file_key,
+            target=target,
+            output_dir=output_dir,
+            page_name=args.page,
+            page_index=args.page_index,
+            all_pages=args.all_pages,
+            include_utility_css=args.with_utility_css,
+        )
+    except Exception as e:
+        print(f"❌ Generate failed: {e}")
+        return
+
+    print(f"✅ Generated {target} project to {output_dir}")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="AiIRIS-pdm: Code ↔ Figma Bidirectional Sync",
@@ -462,6 +497,17 @@ def main():
     pull_p.add_argument("--file-key", help="Figma file key")
     pull_p.add_argument("--apply", action="store_true", help="Apply patches to source (needs source.srcRoot in config)")
 
+    gen_p = sub.add_parser("generate", help="Figma → New Frontend",
+        epilog="Examples:\n  figma-sync generate --file-key ABC123 --target react --output ./out\n  figma-sync generate --file-key ABC123 --target flutter --page 'Home'",
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    gen_p.add_argument("--file-key", help="Figma file key")
+    gen_p.add_argument("--target", choices=["react", "vue", "html", "flutter"], help="Output target")
+    gen_p.add_argument("--output", help="Output directory")
+    gen_p.add_argument("--page", help="Page name to export")
+    gen_p.add_argument("--page-index", type=int, help="Page index to export")
+    gen_p.add_argument("--all-pages", action="store_true", help="Export all pages")
+    gen_p.add_argument("--with-utility-css", action="store_true", help="Emit styles/utility.css and app.css import")
+
     args = parser.parse_args()
     config = load_config(args.config)
 
@@ -475,6 +521,8 @@ def main():
         cmd_preview(args, config)
     elif args.command == "pull":
         cmd_pull(args, config)
+    elif args.command == "generate":
+        cmd_generate(args, config)
     else:
         parser.print_help()
 
