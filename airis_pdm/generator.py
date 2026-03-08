@@ -241,9 +241,7 @@ def _render_react(node: dict, sheet: StyleSheet, indent: int = 0, css_module: bo
         return f"{pad}<{tag} className=\"{class_name}\"></{tag}>"
     inner = "\n".join(_render_react(child, sheet, indent + 1, css_module) for child in children)
     if css_module:
-        return f"{pad}<{tag} className={{styles['{class_name}']}}>
-{inner}
-{pad}</{tag}>"
+        return f"{pad}<{tag} className={{styles['{class_name}']}}>\n{inner}\n{pad}</{tag}>"
     return f"{pad}<{tag} className=\"{class_name}\">\n{inner}\n{pad}</{tag}>"
 
 
@@ -426,6 +424,72 @@ def generate_project(
         index_html = _build_html_page(index_title, index_body + "\n" + hidden_footer, "./styles/app.css")
         _write(Path(output_dir) / "index.html", index_html)
         _write_app_css(Path(output_dir), html_bundle.to_css(), include_utility_css)
+
+
+def generate_from_ir(
+    ir_data: dict,
+    target: str = "vue",
+    output_dir: str = "./generated",
+    page_name: Optional[str] = None,
+    with_utility_css: bool = False,
+) -> dict:
+    """Generate frontend code from IR data (no Figma API needed).
+
+    This is the primary entry point for the Pencil AI pipeline:
+    Pencil .pen → IR → generate_from_ir → Vue/React/HTML/Flutter.
+
+    Args:
+        ir_data: IR dict — either a single page node (with 'children',
+                 'figmaType', 'figmaName') or a multi-page wrapper
+                 with 'pages' key.
+        target: Output framework — 'vue', 'react', 'html', 'flutter'.
+        output_dir: Directory to write generated files.
+        page_name: Optional page name; auto-detected from IR if omitted.
+        with_utility_css: Include utility CSS.
+
+    Returns:
+        dict with 'files' (list of relative paths written) and 'target'.
+    """
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
+    files_before = set(_list_files(output_path))
+
+    pages: list[tuple[str, dict]] = []
+
+    # Support multi-page wrapper: {"pages": [{...}, ...]}
+    if "pages" in ir_data and isinstance(ir_data["pages"], list):
+        for pg in ir_data["pages"]:
+            name = pg.get("figmaName") or pg.get("name") or "Page"
+            pages.append((name, pg))
+    else:
+        name = page_name or ir_data.get("figmaName") or ir_data.get("name") or "Page"
+        pages.append((name, ir_data))
+
+    for pg_name, ir_page in pages:
+        components: Dict[str, ComponentSpec] = {}
+        _collect_components(ir_page, components)
+        _generate_target(
+            target=target,
+            output_dir=output_dir,
+            page_name=pg_name,
+            ir_page=ir_page,
+            components=components,
+            include_utility_css=with_utility_css,
+        )
+
+    files_after = set(_list_files(output_path))
+    new_files = sorted(str(f.relative_to(output_path)) for f in files_after - files_before)
+
+    return {
+        "files": new_files,
+        "target": target,
+        "output_dir": output_dir,
+    }
+
+
+def _list_files(directory: Path) -> list:
+    """Recursively list all files under directory."""
+    return [p for p in directory.rglob("*") if p.is_file()]
 
 
 def _generate_target(
