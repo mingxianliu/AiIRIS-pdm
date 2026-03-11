@@ -32,13 +32,7 @@ from .code_patcher import CodePatcher
 from .config import load_config
 from .generator import generate_project
 from .token_export import export_tokens
-
-
-def _count_nodes(tree: dict) -> int:
-    n = 1
-    for child in tree.get("children", []):
-        n += _count_nodes(child)
-    return n
+from .design_assets import _count_nodes
 
 
 async def process_url_to_ir(url: str, args, config: dict, viewport_override=None):
