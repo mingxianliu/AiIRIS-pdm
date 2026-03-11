@@ -24,6 +24,7 @@ from .config import load_config, validate_config
 from . import design_assets
 from .figma_mcp_tools import FigmaMcpTools
 from .generator import generate_project
+from .token_export import extract_tokens_from_ir, export_tokens
 
 __all__ = [
     "__version__",
@@ -50,4 +51,6 @@ __all__ = [
     "design_assets",
     "FigmaMcpTools",
     "generate_project",
+    "extract_tokens_from_ir",
+    "export_tokens",
 ]

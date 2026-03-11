@@ -31,6 +31,7 @@ from .figma_reader import FigmaAPIClient, FigmaToIR, IRDiffer
 from .code_patcher import CodePatcher
 from .config import load_config
 from .generator import generate_project
+from .token_export import export_tokens
 
 
 def _count_nodes(tree: dict) -> int:
@@ -447,6 +448,23 @@ def cmd_generate(args, config: dict):
     print(f"✅ Generated {target} project to {output_dir}")
 
 
+def cmd_export_tokens(args):
+    """從 IR 產出 design tokens（tokens.json 或 CSS 變數）。"""
+    try:
+        written = export_tokens(
+            ir_path_or_dir=args.from_dir,
+            output_path=args.output,
+            format=args.format,
+            css_prefix=args.css_prefix,
+        )
+        print(f"✅ Tokens 已寫入: {written}")
+    except FileNotFoundError as e:
+        print(f"❌ {e}")
+        print("   請先執行 'figma-sync push <url>' 產生 IR。")
+    except Exception as e:
+        print(f"❌ export-tokens 失敗: {e}")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="AiIRIS-pdm: Code ↔ Figma Bidirectional Sync",
@@ -508,6 +526,14 @@ def main():
     gen_p.add_argument("--all-pages", action="store_true", help="Export all pages")
     gen_p.add_argument("--with-utility-css", action="store_true", help="Emit styles/utility.css and app.css import")
 
+    export_p = sub.add_parser("export-tokens", help="從 IR 產出 design tokens (tokens.json 或 CSS)",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="Examples:\n  figma-sync export-tokens\n  figma-sync export-tokens --from-dir .figma-sync --output tokens.json --format css")
+    export_p.add_argument("--from-dir", default=".figma-sync", help="IR 目錄（內含 figma-import-payload.json）")
+    export_p.add_argument("--output", "-o", default="tokens.json", help="輸出檔路徑")
+    export_p.add_argument("--format", choices=["json", "css"], default="json", help="輸出格式")
+    export_p.add_argument("--css-prefix", default="--token", help="CSS 變數前綴（僅 format=css 時使用）")
+
     args = parser.parse_args()
     config = load_config(args.config)
 
@@ -523,6 +549,8 @@ def main():
         cmd_pull(args, config)
     elif args.command == "generate":
         cmd_generate(args, config)
+    elif args.command == "export-tokens":
+        cmd_export_tokens(args)
     else:
         parser.print_help()
 

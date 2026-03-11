@@ -24,6 +24,8 @@
 | [GENERATE_FLOW.md](GENERATE_FLOW.md) | Generate workflow details |
 | [LEGACY_PUSH_PULL.md](LEGACY_PUSH_PULL.md) | Legacy push/pull/watch workflow |
 | [ERSLICE_INTEGRATION.md](ERSLICE_INTEGRATION.md) | Optional ErSlice alignment |
+| [PRODUCT_FLOW_AI_PROTOTYPE.md](PRODUCT_FLOW_AI_PROTOTYPE.md) | 10-phase product flow (PM→Figma→Domain→API→AI Prototype→Production)，含 SOP / 交付物 / 角色矩陣與 pdm 對齊 |
+| [OPTIMIZATION_PDM_HUB_FOR_PRODUCT_FLOW.md](OPTIMIZATION_PDM_HUB_FOR_PRODUCT_FLOW.md) | 依產品流程優化 pdm 與 hub：各 Phase 對應、建議改動與實作優先級 |
 
 ---
 
