@@ -12,6 +12,9 @@ env/
 # Figma sync output
 .figma-sync/
 
+# Node modules
+node_modules/
+
 # Figma plugin
 figma_plugin/node_modules/
 figma_plugin/dist/
