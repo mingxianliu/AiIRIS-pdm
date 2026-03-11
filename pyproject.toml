@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "airis-pdm"
-version = "0.4.0"
-description = "AiIRIS Project Design Model — Code ↔ Figma bidirectional sync with 100% naming control"
+version = "0.5.0"
+description = "AiIRIS Project Design Model — Spec → Pencil AI → Fine-tune → React/Vue Code"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
 authors = [{ name = "AiIRIS" }]
-keywords = ["figma", "design", "vue", "react", "sync", "code-to-design"]
+keywords = ["pencil-ai", "design", "vue", "react", "codegen", "design-to-code"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -23,7 +23,6 @@ classifiers = [
 ]
 dependencies = [
     "playwright>=1.40",
-    "requests>=2.28",
     "watchdog>=3.0",
 ]
 
@@ -32,9 +31,13 @@ dev = [
     "pytest>=7",
     "pytest-asyncio>=0.21",
 ]
+legacy = [
+    "requests>=2.28",
+]
 
 [project.scripts]
-figma-sync = "airis_pdm.cli:main"
+pdm = "airis_pdm.cli:main"
+figma-sync = "airis_pdm.cli:main"  # deprecated alias
 
 [tool.setuptools.packages.find]
 where = ["."]

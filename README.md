@@ -1,13 +1,27 @@
 # AiIRIS-pdm
 
-**AiIRIS Project Design Model — Figma → New Frontend（Python 版）**
+**AiIRIS Project Design Model — Spec → Pencil AI → Fine-tune → React/Vue Code**
 
-[![CI](https://github.com/mingxianliu/AiIRIS-pdm/actions/workflows/ci.yml/badge.svg)](https://github.com/mingxianliu/AiIRIS-pdm/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://python.org)
-[![Version](https://img.shields.io/badge/version-0.4.0-green)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.5.0-green)](CHANGELOG.md)
 
-從 Figma 直接產生新的前端（React / Vue / HTML / Flutter）。
-彙整 [figma-code-sync](https://github.com/erich/figma-code-sync) 的 IR 管線與 [ErSlice](https://github.com/openclaw/ErSlice) 的設計資產／manifest 概念。
+從規格出發，透過 Pencil AI 產生 UI 設計，人工微調後直接產出 React / Vue / HTML / Flutter 程式碼。
+
+---
+
+## 新工作流（v0.5.0+）
+
+```
+1. 規格（Spec）  →  AI 分析需求，產生結構化 UI 描述
+          ↓
+2. Pencil AI    →  透過 MCP batch_design 自動建立 .pen 設計稿
+          ↓
+3. 人工微調     →  在 Pencil AI 編輯器中可視化調整
+          ↓
+4. 匯出 IR      →  batch_get → PencilToIR → IR v2.0 (JSON)
+          ↓
+5. 產出程式碼   →  pdm codegen ir.json --target vue → React/Vue/HTML/Flutter
+```
 
 ---
 
@@ -15,39 +29,39 @@
 
 | 能力 | 說明 |
 |------|------|
-| **Generate (Figma → New Frontend)** | 讀取 Figma → IR → 產出 React/Vue/HTML/Flutter 專案檔 |
-| **Component/Variant 規則** | `Button/Primary` → Component `Button`、Variant `Primary` |
-| **分離 CSS** | 產生 `styles/app.css`，可選 `utility.css` |
-| **多頁 HTML** | `index.html` 渲染第一頁，`pages/*.html` 保留所有頁面 |
-| **ErSlice 對齊** | 可輸出 design-assets 友善的 manifest、設計 token 索引（選用） |
+| **Codegen (IR → Code)** | 從 IR v2.0 或 .pen 匯出 → React/Vue/HTML/Flutter |
+| **PencilToIR** | .pen 節點 → IR v2.0 轉換 |
+| **PencilMcpTools** | AI Agent 可用的 MCP 工具包 |
+| **Spec → Design Ops** | 結構化規格 → Pencil batch_design 操作 |
+| **Component/Variant** | `Button/Primary` → Component `Button`、Variant `Primary` |
+| **Design Tokens** | 從 IR 擷取顏色/字型/字級 token |
+| **Push/Watch** | DOM → IR snapshot（保留，不依賴 Figma） |
 
 ---
 
 ## 架構
 
 ```
-Input: Figma file (fileKey) + FIGMA_TOKEN
-
-                    ┌─────────────────────────┐
-                    │    IR (JSON Schema)     │
-                    │  中間表示層 — 統一契約   │
-                    └──────────┬──────────────┘
-                               │
-             ┌─────────────────▼─────────────────┐
-             │            AiIRIS-pdm             │
-             │            (Python)               │
-             │ • Figma API 讀取                  │
-             │ • FigmaToIR                       │
-             │ • Component/Variant 分組          │
-             │ • 產生 React/Vue/HTML/Flutter     │
-             │ • design_assets（選用）           │
-             └────────────────────────────────────┘
-
-Output (React): ./out/index.html, main.tsx, components/, pages/, styles/
-Output (Vue):   ./out/index.html, main.ts, App.vue, components/, pages/, styles/
-Output (HTML):  ./out/index.html, pages/, styles/
-Output (Flutter): ./out/lib/components/, lib/pages/
-Note: use --with-utility-css to emit styles/utility.css and @import it from app.css.
+                          ┌──────────────┐
+                          │  規格 (Spec) │
+                          └──────┬───────┘
+                                 │
+                     ┌───────────▼───────────┐
+                     │  Pencil AI (.pen)      │
+                     │  MCP batch_design /    │
+                     │  batch_get             │
+                     └───────────┬───────────┘
+                                 │
+                     ┌───────────▼───────────┐
+                     │  PencilToIR            │
+                     │  .pen → IR v2.0 (JSON) │
+                     └───────────┬───────────┘
+                                 │
+              ┌──────────────────▼──────────────────┐
+              │           AiIRIS-pdm                │
+              │          generate_from_ir            │
+              │  • React  • Vue  • HTML  • Flutter  │
+              └─────────────────────────────────────┘
 ```
 
 ---
@@ -63,201 +77,136 @@ pip install -e ".[dev]"
 playwright install chromium
 ```
 
-或僅依賴：
+### 2. Codegen：IR → React/Vue/HTML/Flutter
 
 ```bash
-pip install playwright requests watchdog
-playwright install chromium
+# 從 IR JSON 產生 React
+pdm codegen ir-payload.json --target react --output ./out
+
+# 從 .pen batch_get 匯出的 JSON 產生 Vue
+pdm codegen pen-export.json --target vue --output ./out
+
+# 產生 HTML
+pdm codegen ir-payload.json --target html --output ./out
+
+# 產生 Flutter
+pdm codegen ir-payload.json --target flutter --output ./out
+
+# 可選：產生 utility.css
+pdm codegen ir-payload.json --target react --output ./out --with-utility-css
 ```
 
-### 2. Generate: Figma → New Frontend
-
-## Generate: Figma → New Frontend（不需要 push）
-
-### 必要輸入
-
-- `FIGMA_TOKEN`（或 `figma.personalAccessToken`）
-- `fileKey`（或 `--file-key`）
-- `--target`（react / vue / html / flutter）
-
-### 輸入 / 輸出對照表
-
-| 輸入 | 說明 | 主要輸出 |
-|------|------|----------|
-| `FIGMA_TOKEN` | Figma Personal Access Token | Figma 文件內容可被讀取 |
-| `fileKey` | Figma file key | 生成對應頁面與元件 |
-| `--target react` | 生成 React 專案檔 | `index.html`, `main.tsx`, `components/*.tsx`, `pages/*.tsx`, `*.module.css`, `styles/app.css` |
-| `--target vue` | 生成 Vue 專案檔 | `index.html`, `main.ts`, `App.vue`, `components/*.vue`, `pages/*.vue`, `styles/app.css` |
-| `--target html` | 生成 HTML | `index.html`（多頁時另有 `pages/*.html`）+ `styles/app.css` |
-| `--target flutter` | 生成 Flutter | `lib/components/*.dart`, `lib/pages/*.dart` |
-| `--all-pages` | 匯出所有頁面 | 多頁 HTML：`pages/*.html` + `index.html` 渲染第一頁 |
-| `--with-utility-css` | 產生 utility.css | `styles/utility.css` + `app.css` 自動 `@import` |
-
-### 指令範例
+### 3. Push：DOM → IR Snapshot
 
 ```bash
-export FIGMA_TOKEN=figd_xxxxxxxxxxxxxxxxxxxx
-
-# React
-figma-sync generate --file-key YOUR_FILE_KEY --target react --output ./out
-
-# Vue
-figma-sync generate --file-key YOUR_FILE_KEY --target vue --output ./out
-
-# HTML (單頁)
-figma-sync generate --file-key YOUR_FILE_KEY --target html --output ./out
-
-# HTML (多頁)
-figma-sync generate --file-key YOUR_FILE_KEY --target html --output ./out --all-pages
-
-# Flutter
-figma-sync generate --file-key YOUR_FILE_KEY --target flutter --output ./out
-
-# 可選：產生 utility.css（預設不產生）
-figma-sync generate --file-key YOUR_FILE_KEY --target react --output ./out --with-utility-css
+pdm push http://localhost:5173
+pdm push http://localhost:5173 --viewport 375x812
+pdm push http://localhost:5173 --selector '#login-form'
 ```
 
-### 實際操作示例
+### 4. Watch：監聽變更自動 Push
 
 ```bash
-export FIGMA_TOKEN=figd_xxxxxxxxxxxxxxxxxxxx
-figma-sync generate --file-key YOUR_FILE_KEY --target react --output ./out --all-pages
+pdm watch http://localhost:5173
 ```
 
-預期輸出（摘要）：
-
-```
-out/
-  index.html
-  main.tsx
-  styles/
-    app.css
-  components/
-    ...
-  pages/
-    ...
-```
-
-### 實際操作示例（Vue）
+### 5. Export Tokens：IR → Design Tokens
 
 ```bash
-export FIGMA_TOKEN=figd_xxxxxxxxxxxxxxxxxxxx
-figma-sync generate --file-key YOUR_FILE_KEY --target vue --output ./out
+pdm export-tokens --from-dir .pdm --output tokens.json
+pdm export-tokens --format css --output tokens.css
 ```
-
-### 實際操作示例（Flutter）
-
-```bash
-export FIGMA_TOKEN=figd_xxxxxxxxxxxxxxxxxxxx
-figma-sync generate --file-key YOUR_FILE_KEY --target flutter --output ./out
-```
-
-### 產出結構（摘要）
-
-- **React**：`index.html`、`main.tsx`、`components/*.tsx`、`pages/*.tsx`、`*.module.css`、`styles/app.css`
-- **Vue**：`index.html`、`main.ts`、`App.vue`、`components/*.vue`、`pages/*.vue`、`styles/app.css`
-- **HTML**：`index.html`（多頁時另有 `pages/*.html`）+ `styles/app.css`
-- **Flutter**：`lib/components/*.dart`、`lib/pages/*.dart`
-
-> **重要**
-> `styles/app.css` 預設不包含 `utility.css`。若需要此檔，務必加上 `--with-utility-css`，才會輸出 `styles/utility.css` 並在 `app.css` 中 `@import`。
-
-> 多頁 HTML 模式下，`index.html` 會渲染第一頁內容，並保留隱藏的導覽連結（`visually-hidden`）指向 `pages/*.html`。
-
-### CLI 參數（Generate）
-
-| 參數 | 必填 | 說明 |
-|------|------|------|
-| `--file-key` | 是 | Figma file key |
-| `--target` | 是 | `react` / `vue` / `html` / `flutter` |
-| `--output` | 否 | 輸出資料夾（預設 `./generated`） |
-| `--page` | 否 | 指定頁面名稱 |
-| `--page-index` | 否 | 指定頁面索引 |
-| `--all-pages` | 否 | 匯出所有頁面 |
-| `--with-utility-css` | 否 | 產生 `styles/utility.css` 並在 `app.css` 中匯入 |
-
-### 範例輸出樹狀（React）
-
-```
-out/
-  index.html
-  main.tsx
-  styles/
-    app.css
-    utility.css (only with --with-utility-css)
-  components/
-    Button.tsx
-    Button.module.css
-  pages/
-    Home.tsx
-    Home.module.css
-```
-
-### 範例輸出樹狀（Vue）
-
-```
-out/
-  index.html
-  main.ts
-  App.vue
-  styles/
-    app.css
-    utility.css (only with --with-utility-css)
-  components/
-    Button.vue
-  pages/
-    Home.vue
-```
-
-### 範例輸出樹狀（HTML）
-
-```
-out/
-  index.html
-  pages/
-    Home.html
-    Pricing.html
-  styles/
-    app.css
-    utility.css (only with --with-utility-css)
-```
-
-### 範例輸出樹狀（Flutter）
-
-```
-out/
-  lib/
-    components/
-      button.dart
-    pages/
-      home.dart
-```
-
-### 命名規則（Component / Variant）
-
-Generator 會依 Figma layer name 拆解成 `Component/Variant`：
-
-- `Button/Primary` → Component: `Button`、Variant: `Primary`
-- `Card` → Component: `Card`、Variant: `Default`
-
-當 Figma node 是 `COMPONENT`/`INSTANCE` 時，會優先視為可生成的元件。
 
 ---
 
-## Legacy: Push / Pull / Watch
+## Python API（for AI Agent）
 
-舊流程（Code ↔ Figma 雙向同步）已移到 [docs/LEGACY_PUSH_PULL.md](docs/LEGACY_PUSH_PULL.md)。
+```python
+from airis_pdm import PencilToIR, PencilMcpTools, generate_from_ir
 
-### Generate 設定範例（可選）
+# 1. Pencil → IR
+converter = PencilToIR(page_name="首頁")
+ir_doc = converter.convert(pen_data)  # pen_data from batch_get
 
-`figma-sync.config.json` 只要包含 figma 區塊即可：
+# 2. IR → Code
+result = generate_from_ir(
+    ir_data=ir_doc["tree"],
+    target="vue",
+    output_dir="./out",
+)
+
+# 3. MCP Tools（AI Agent 使用）
+tools = PencilMcpTools(page_name="首頁")
+ir_json = tools.get_pen_ir(pen_data)
+code_json = tools.generate_code(pen_data, target="react", output_dir="./out")
+tokens_json = tools.get_design_tokens(pen_data)
+
+# 4. 從規格產生 Pencil 設計操作
+ops_json = tools.spec_to_design_ops({
+    "name": "首頁",
+    "width": 360, "height": 780,
+    "theme": {"primary": "#0092B8", "bg": "#F8FAFC"},
+    "sections": [
+        {"type": "header", "title": "我的應用", "height": 56},
+        {"type": "content"},
+        {"type": "navbar", "items": [
+            {"label": "首頁", "icon": "home"},
+            {"label": "設定", "icon": "settings"},
+        ]},
+    ],
+})
+```
+
+---
+
+## CLI 參數
+
+### codegen
+
+| 參數 | 必填 | 說明 |
+|------|------|------|
+| `ir_file` | 是 | IR v2.0 JSON 或 .pen batch_get 匯出檔 |
+| `--target` | 否 | `react` / `vue` / `html` / `flutter`（預設 `html`） |
+| `--output` | 否 | 輸出目錄（預設 `./generated`） |
+| `--page` | 否 | 頁面名稱 |
+| `--with-utility-css` | 否 | 產生 utility.css |
+
+### push
+
+| 參數 | 必填 | 說明 |
+|------|------|------|
+| `url` | 是 | App URL |
+| `--viewport` | 否 | WxH（如 `375x812`） |
+| `--selector` | 否 | CSS selector |
+
+---
+
+## 產出結構
+
+- **React**：`index.html`、`main.tsx`、`components/*.tsx`、`pages/*.tsx`、`*.module.css`、`styles/app.css`
+- **Vue**：`index.html`、`main.ts`、`App.vue`、`components/*.vue`、`pages/*.vue`、`styles/app.css`
+- **HTML**：`index.html`（多頁：`pages/*.html`）+ `styles/app.css`
+- **Flutter**：`lib/components/*.dart`、`lib/pages/*.dart`
+
+---
+
+## 設定檔（pencil.config.json）
 
 ```json
 {
-  "figma": {
-    "personalAccessToken": "figd_xxxxxxxxxxxxxxxxxxxx",
-    "fileKey": "YOUR_FILE_KEY"
-  }
+  "pencil": {
+    "defaultTarget": "vue",
+    "outputDir": "./generated"
+  },
+  "source": {
+    "framework": "vue",
+    "styleStrategy": "tailwind",
+    "entryUrl": "http://localhost:5173",
+    "srcRoot": "./src"
+  },
+  "viewport": { "width": 375, "height": 812 },
+  "naming": { "separator": "/" },
+  "export": { "snapshotDir": ".pdm" }
 }
 ```
 
@@ -270,80 +219,52 @@ AiIRIS-pdm/
 ├── README.md
 ├── CHANGELOG.md
 ├── pyproject.toml
-├── figma-sync.config.json      # 設定範例
-├── airis_pdm/                  # 主套件（Python 0.4.0）
+├── pencil.config.json            # 設定（取代 figma-sync.config.json）
+├── airis_pdm/                    # 主套件 (v0.5.0)
 │   ├── __init__.py
-│   ├── cli.py                  # CLI：push / watch / pull / preview / push-stories
-│   ├── config.py               # 設定載入 + 欄位驗證（validate_config）
-│   ├── dom_extractor.py        # Playwright + DOM Walker，擷取 DOM 樹與樣式
-│   ├── ir_builder.py           # DOM → IR 2.0、save_ir 寫出 JSON
-│   ├── naming_engine.py        # 命名引擎（data-figma-name → 組件 → id → class → fallback）
-│   ├── figma_reader.py         # Figma REST API、FigmaToIR（含 Gradient）、IRDiffer
-│   ├── code_patcher.py         # IR diff → 原始碼 patch（Tailwind/CSS/inline 寫檔）
-│   └── design_assets.py        # ErSlice 風格 manifest / completeness（選用）
-├── figma_plugin/               # 內建 Figma Plugin（TypeScript）
-│   ├── src/code.ts             # Plugin 邏輯（Gradient/Shadow/AutoLayout 全支援）
-│   ├── src/ui.html             # Plugin UI
-│   ├── src/__tests__/          # Jest 單元測試（純函數）
-│   └── dist/                   # npm run build 產出
-├── .github/workflows/ci.yml   # GitHub Actions CI（Python 測試 + TS 型別檢查）
-├── schemas/
-│   └── ir_schema.json          # IR JSON Schema
-├── examples/
-│   └── login-page-payload.json
+│   ├── cli.py                    # CLI：codegen / push / watch / preview / export-tokens
+│   ├── config.py                 # 設定載入 + 欄位驗證
+│   ├── pencil_reader.py          # ⭐ .pen → IR v2.0 轉換器
+│   ├── pencil_mcp_tools.py       # ⭐ AI Agent MCP 工具包
+│   ├── generator.py              # IR → React/Vue/HTML/Flutter 程式碼產生
+│   ├── dom_extractor.py          # Playwright DOM 擷取（push/watch 用）
+│   ├── ir_builder.py             # DOM → IR v2.0
+│   ├── naming_engine.py          # 7 層命名引擎
+│   ├── code_patcher.py           # IR diff → 原始碼 patch
+│   ├── design_assets.py          # ErSlice manifest / completeness
+│   ├── token_export.py           # Design token 匯出
+│   ├── figma_reader.py           # [DEPRECATED] Figma API
+│   └── figma_mcp_tools.py        # [DEPRECATED] Figma MCP tools
 ├── tests/
-│   ├── test_smoke.py
-│   ├── test_ir_flattening.py
-│   ├── test_pull_pipeline.py   # FigmaToIR / IRDiffer / CodePatcher mock 測試
-│   ├── test_style_converter.py # StyleConverter Tailwind/CSS 轉換測試
-│   ├── test_naming_engine.py   # NamingEngine 優先順序與邊界案例
-│   ├── test_watch_debounce.py  # ChangeHandler 防抖與過濾測試
-│   ├── test_storybook_sync.py  # cmd_push_stories mock 測試
-│   └── test_apply_to_file.py   # 實際寫檔整合測試（Tailwind/CSS/inline）
+├── schemas/
+│   └── ir_schema.json            # IR JSON Schema
 └── docs/
-    └── ...
 ```
 
 ---
 
 ## 測試
 
-### Python 測試（100 test cases）
-
 ```bash
 pip install -e ".[dev]"
 pytest tests/ -v
 ```
 
-### Figma Plugin 測試（Jest，36 test cases）
-
-```bash
-cd figma_plugin
-npm install
-npm test
-```
-
 ---
 
-## CI/CD
+## 從 v0.4.0 遷移
 
-本專案使用 GitHub Actions 自動執行：
+v0.5.0 全面棄用 Figma 整合，改用 Pencil AI：
 
-| Job | 內容 |
-|-----|------|
-| **Python Tests** | Python 3.10/3.11/3.12 × ubuntu/macos 矩陣測試 |
-| **Plugin TypeScript** | tsc 型別檢查 + npm run build |
-| **Version Check** | 確認 pyproject.toml / `__init__.py` / cli.py 版本號一致 |
-
----
-
-## 與 ErSlice 的對齊
-
-- **design-assets 目錄**：可選將 push 產出寫入 `design-assets/<module>/pages/<slug>/`，並產生 `erslice-manifest.json`、`completeness.json` 風格 metadata（見 `airis_pdm.design_assets`）。
-- **設計 Token**：從 IR 或 CSS 擷取顏色/字型可輸出為 `tokens.css` 或 `tokens.merge.json` 索引，供 ErSlice 或設計系統使用。
-- **Figma 雙向**：概念與 ErSlice 的 `figmaBidirectionalSync`、`preserveHierarchy` 一致，本專案以 Python 管線實作並與 Figma Plugin 協定相容。
-
-詳見 [docs/ERSLICE_INTEGRATION.md](docs/ERSLICE_INTEGRATION.md)。
+| v0.4.0 (Figma) | v0.5.0 (Pencil AI) |
+|-----------------|---------------------|
+| `figma-sync generate --file-key ...` | `pdm codegen ir.json --target vue` |
+| `figma-sync pull --file-key ...` | 棄用：改在 Pencil AI 設計 |
+| `FigmaAPIClient` | 棄用 |
+| `FigmaToIR` | `PencilToIR` |
+| `FigmaMcpTools` | `PencilMcpTools` |
+| `figma-sync.config.json` | `pencil.config.json` |
+| `requests` 依賴 | 已移除（移至 `[legacy]`） |
 
 ---
 

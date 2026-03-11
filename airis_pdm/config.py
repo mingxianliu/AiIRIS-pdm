@@ -5,11 +5,11 @@ from pathlib import Path
 from typing import Any
 
 # 已知有效的頂層欄位
-_KNOWN_TOP_KEYS = {"figma", "source", "viewport", "naming", "export"}
+_KNOWN_TOP_KEYS = {"pencil", "source", "viewport", "naming", "export"}
 
 # 各區塊已知欄位（用於拼字提示）
 _KNOWN_SECTION_KEYS = {
-    "figma": {"personalAccessToken", "fileKey"},
+    "pencil": {"defaultTarget", "outputDir"},
     "source": {"framework", "styleStrategy", "entryUrl", "srcRoot"},
     "viewport": {"width", "height", "deviceName"},
     "naming": {"separator", "ignoreClasses"},
@@ -29,9 +29,13 @@ def validate_config(cfg: dict) -> None:
     if not cfg:
         return
 
+    # 向下相容：警告 figma 區塊已棄用
+    if "figma" in cfg:
+        _warn("'figma' 區塊已棄用（v0.5.0+），Figma 整合已移除。")
+
     # 頂層未知欄位
     for key in cfg:
-        if key not in _KNOWN_TOP_KEYS:
+        if key not in _KNOWN_TOP_KEYS and key != "figma":
             known = ", ".join(sorted(_KNOWN_TOP_KEYS))
             _warn(f"未知頂層欄位 '{key}'（已知欄位：{known}）")
 
@@ -69,11 +73,17 @@ def validate_config(cfg: dict) -> None:
         _warn(f"source.srcRoot '{src_root}' 目錄不存在（pull --apply 時需要）")
 
 
-def load_config(config_path: str = "figma-sync.config.json") -> dict:
-    """載入 JSON 設定檔，不存在則回傳空 dict；存在則做基本驗證。"""
+def load_config(config_path: str = "pencil.config.json") -> dict:
+    """載入 JSON 設定檔，不存在則嘗試 figma-sync.config.json 回退，都沒有回傳空 dict。"""
     path = Path(config_path)
     if not path.exists():
-        return {}
+        # 向下相容：嘗試舊檔名
+        fallback = Path("figma-sync.config.json")
+        if fallback.exists():
+            _warn("載入舊格式 figma-sync.config.json，建議重新命名為 pencil.config.json")
+            path = fallback
+        else:
+            return {}
     with open(path, "r", encoding="utf-8") as f:
         cfg: Any = json.load(f)
     if not isinstance(cfg, dict):

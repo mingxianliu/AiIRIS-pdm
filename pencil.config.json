@@ -1,0 +1,25 @@
+{
+  "pencil": {
+    "defaultTarget": "vue",
+    "outputDir": "./generated"
+  },
+  "source": {
+    "framework": "vue",
+    "styleStrategy": "tailwind",
+    "entryUrl": "http://localhost:5173",
+    "srcRoot": "./src"
+  },
+  "viewport": {
+    "width": 375,
+    "height": 812,
+    "deviceName": "iPhone 14"
+  },
+  "naming": {
+    "separator": "/",
+    "ignoreClasses": ["hidden", "sr-only"]
+  },
+  "export": {
+    "snapshotDir": ".pdm",
+    "cjkFontFamily": "Noto Sans TC"
+  }
+}

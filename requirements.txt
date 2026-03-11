@@ -1,5 +1,8 @@
 # AiIRIS-pdm runtime
 playwright>=1.40
-requests>=2.28
+watchdog>=3.0
 
 # After install: playwright install chromium
+
+# Legacy (Figma, deprecated)
+# requests>=2.28

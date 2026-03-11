@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """
-AiIRIS-pdm CLI — Code ↔ Figma 雙向同步
+AiIRIS-pdm CLI — Spec → Pencil AI → Fine-tune → React/Vue Code
 
-  python -m airis_pdm.cli push <url>       # Code → Figma
-  python -m airis_pdm.cli pull --file-key KEY [--apply]  # Figma → Code
-  python -m airis_pdm.cli preview <url>    # 預覽命名樹
+  pdm push <url>                          # Code → IR snapshot
+  pdm watch <url>                         # Watch + auto push
+  pdm codegen <ir-json> --target vue      # IR → React/Vue/HTML/Flutter
+  pdm preview <url>                       # 預覽命名樹
+  pdm export-tokens                       # IR → design tokens
 """
 
 import argparse
@@ -15,7 +17,6 @@ import sys
 import time
 import re
 import threading
-import requests
 from pathlib import Path
 from watchdog.observers import Observer
 from airis_pdm import __version__
@@ -27,10 +28,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from .naming_engine import preview_naming_tree
 from .dom_extractor import extract_dom_tree, ExtractionConfig
 from .ir_builder import build_ir_from_extraction, save_ir
-from .figma_reader import FigmaAPIClient, FigmaToIR, IRDiffer
 from .code_patcher import CodePatcher
 from .config import load_config
-from .generator import generate_project
+from .generator import generate_from_ir
+from .pencil_reader import PencilToIR
 from .token_export import export_tokens
 from .design_assets import _count_nodes
 
@@ -98,6 +99,8 @@ async def perform_push(url: str, args, config: dict):
 
 async def cmd_push_stories(args, config: dict):
     """Fetch stories from Storybook and batch export."""
+    import requests  # lazy import — legacy dependency
+
     sb_url = args.url.rstrip("/")
     print(f"📚 Fetching stories from: {sb_url}")
     
@@ -300,146 +303,65 @@ def cmd_preview(args, config: dict):
     print(f"\nTotal nodes: {_count_nodes(ir_doc['tree'])}")
 
 
-def cmd_pull(args, config: dict):
-    """Pull: 從 Figma 讀取 → diff → 報告或 --apply 回寫."""
-    figma_cfg = config.get("figma", {})
-    token = figma_cfg.get("personalAccessToken") or os.environ.get("FIGMA_TOKEN")
-    file_key = figma_cfg.get("fileKey") or args.file_key
-
-    if not token:
-        print("❌ 請設定 FIGMA_TOKEN 環境變數，或在 figma-sync.config.json 的 figma.personalAccessToken 設定。")
-        print("   取得方式：Figma → Settings → Personal access tokens → 新增")
-        return
-    if not file_key:
-        print("❌ 請使用 --file-key 或在 config 的 figma.fileKey 設定 Figma 檔案 key。")
-        return
-
-    print(f"📥 Pulling from Figma: {file_key}")
-
-    output_dir = config.get("export", {}).get("snapshotDir", ".figma-sync")
-    snapshot_path = os.path.join(output_dir, "figma-import-payload.json")
-    if not os.path.exists(snapshot_path):
-        print("❌ 找不到 push 快照，請先執行 'figma-sync push <url>'。")
-        return
-
-    with open(snapshot_path, "r", encoding="utf-8") as f:
-        before_ir = json.load(f)
-    print("   ✅ Loaded snapshot")
-
-    # Figma API — 友善錯誤訊息
-    client = FigmaAPIClient(token)
-    try:
-        figma_data = client.get_file(file_key)
-    except Exception as e:
-        status = getattr(getattr(e, "response", None), "status_code", None)
-        if status == 403:
-            print("❌ Figma API 403：Token 無效或已過期，請重新產生 FIGMA_TOKEN。")
-        elif status == 404:
-            print(f"❌ Figma API 404：找不到檔案 '{file_key}'，請確認 file key 是否正確。")
-        else:
-            print(f"❌ Figma API 錯誤：{e}")
-        return
-
-    document = figma_data.get("document", {})
-    pages = document.get("children", [])
-    if not pages:
-        print("❌ 此 Figma 檔案沒有任何頁面。")
-        return
-
-    converter = FigmaToIR()
-    after_ir_tree = converter.convert(pages[0])
-    print("   ✅ Fetched Figma file")
-
-    differ = IRDiffer()
-    changes = differ.diff(before_ir["tree"], after_ir_tree)
-    if not changes:
-        print("   ✅ No changes.")
-        return
-
-    print(f"   📝 {len(changes)} changed nodes")
-
-    # Layout Integrity 警告
-    layout_warnings = []
-    for node_name, diffs in changes.items():
-        if "layout.integrity" in diffs:
-            layout_warnings.append(node_name)
-
-    if layout_warnings:
-        print("\n   ⚠️  LAYOUT INTEGRITY WARNING:")
-        print("   以下 frame 在 Figma 中失去 Auto Layout，回寫準確度可能降低：")
-        for name in layout_warnings:
-            print(f"     - {name}")
-        print()
-
-    mapping_path = os.path.join(output_dir, "name-mapping.json")
-    name_mapping = {}
-    if os.path.exists(mapping_path):
-        with open(mapping_path, "r", encoding="utf-8") as f:
-            name_mapping = json.load(f)
-
-    src_root = config.get("source", {}).get("srcRoot", "")
-    patcher = CodePatcher(
-        name_mapping=name_mapping,
-        style_strategy=config.get("source", {}).get("styleStrategy", "tailwind"),
-        src_root=src_root,
-        dry_run=not args.apply,
-    )
-    print()
-    print(patcher.generate_patch_report(changes))
-
-    if args.apply:
-        if not src_root:
-            print("⚠️  source.srcRoot 未設定，將嘗試使用 name_mapping 中的路徑。")
-        print("\n🔧 Applying changes to source files...")
-        summary = patcher.apply_changes(changes)
-        if not summary:
-            print("   ℹ️  沒有可套用的變更（可能是 selector 找不到對應檔案）。")
-        for filepath, applied in summary.items():
-            print(f"   📄 {filepath}:")
-            for line in applied:
-                print(line)
-        print("   ✅ Done.")
-    else:
-        print("\n   💡 使用 --apply 將變更套用到原始碼（需設定 source.srcRoot）。")
-
-    diff_path = os.path.join(output_dir, "last-diff.json")
-    with open(diff_path, "w", encoding="utf-8") as f:
-        json.dump(changes, f, indent=2, ensure_ascii=False)
-    print(f"   📄 Diff saved to {diff_path}")
-
-
-def cmd_generate(args, config: dict):
-    """Generate: 從 Figma 產生新前端（不需要 push 快照）."""
-    figma_cfg = config.get("figma", {})
-    token = figma_cfg.get("personalAccessToken") or os.environ.get("FIGMA_TOKEN")
-    file_key = figma_cfg.get("fileKey") or args.file_key
-
-    if not token:
-        print("❌ 請設定 FIGMA_TOKEN 環境變數，或在 figma-sync.config.json 的 figma.personalAccessToken 設定。")
-        return
-    if not file_key:
-        print("❌ 請使用 --file-key 或在 config 的 figma.fileKey 設定 Figma 檔案 key。")
-        return
-
+def cmd_codegen(args, config: dict):
+    """Codegen: 從 IR JSON 或 .pen 節點資料產生 React/Vue/HTML/Flutter 程式碼。"""
+    ir_path = args.ir_file
     target = (args.target or "html").lower()
     output_dir = args.output or "./generated"
 
-    try:
-        generate_project(
-            figma_token=token,
-            file_key=file_key,
-            target=target,
-            output_dir=output_dir,
-            page_name=args.page,
-            page_index=args.page_index,
-            all_pages=args.all_pages,
-            include_utility_css=args.with_utility_css,
-        )
-    except Exception as e:
-        print(f"❌ Generate failed: {e}")
+    if not os.path.exists(ir_path):
+        print(f"❌ 找不到 IR 檔案：{ir_path}")
         return
 
-    print(f"✅ Generated {target} project to {output_dir}")
+    with open(ir_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    # 判斷是 IR 格式還是 .pen batch_get 格式
+    if "version" in data and "tree" in data:
+        # 已是 IR v2.0 格式
+        ir_tree = data["tree"]
+        page_name = args.page or data.get("source", {}).get("entryFile", "Page")
+    elif isinstance(data, list) or "type" in data:
+        # .pen batch_get 格式，需要轉換
+        converter = PencilToIR(page_name=args.page or "Page")
+        ir_doc = converter.convert(data)
+        ir_tree = ir_doc["tree"]
+        page_name = args.page or "Page"
+    else:
+        print("❌ 不支援的 JSON 格式。需要 IR v2.0 文件或 .pen batch_get 節點資料。")
+        return
+
+    try:
+        result = generate_from_ir(
+            ir_data=ir_tree,
+            target=target,
+            output_dir=output_dir,
+            page_name=page_name,
+            with_utility_css=args.with_utility_css,
+        )
+        files = result.get("files", [])
+        print(f"✅ 已產生 {target} 專案至 {output_dir}（{len(files)} 個檔案）")
+        for fp in files:
+            print(f"   📄 {fp}")
+    except Exception as e:
+        print(f"❌ Codegen 失敗：{e}")
+
+
+def cmd_pull(args, config: dict):
+    """Pull: [DEPRECATED] 從 Figma 讀取 — 已棄用，請改用 codegen。"""
+    print("⚠️  'pull' 命令已棄用。Figma 整合已移除。")
+    print("   建議改用新工作流：")
+    print("   1. 在 Pencil AI 中設計 UI")
+    print("   2. 使用 batch_get 匯出節點 JSON")
+    print("   3. pdm codegen <ir.json> --target vue")
+    return
+
+
+def cmd_generate(args, config: dict):
+    """Generate: [DEPRECATED] 從 Figma 產生新前端 — 已棄用，請改用 codegen。"""
+    print("⚠️  'generate' 命令已棄用。Figma 整合已移除。")
+    print("   建議改用新工作流：")
+    print("   pdm codegen <ir.json> --target react --output ./out")
 
 
 def cmd_export_tokens(args):
@@ -461,11 +383,11 @@ def cmd_export_tokens(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="AiIRIS-pdm: Code ↔ Figma Bidirectional Sync",
+        description="AiIRIS-pdm: Spec → Pencil AI → Fine-tune → React/Vue Code",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
-    parser.add_argument("--config", "-c", default="figma-sync.config.json", help="Config path")
+    parser.add_argument("--config", "-c", default="pencil.config.json", help="Config path")
     parser.add_argument("--version", "-v", action="version", version=f"%(prog)s {__version__}")
     sub = parser.add_subparsers(dest="command")
 
@@ -503,27 +425,24 @@ def main():
     preview_p.add_argument("url", help="App URL")
     preview_p.add_argument("--selector", help="CSS selector to preview (e.g. '#sidebar')")
 
-    pull_p = sub.add_parser("pull", help="Figma → Code",
-        epilog="Examples:\n  figma-sync pull --file-key ABC123\n  figma-sync pull --file-key ABC123 --apply",
-        formatter_class=argparse.RawDescriptionHelpFormatter)
-    pull_p.add_argument("--file-key", help="Figma file key")
-    pull_p.add_argument("--apply", action="store_true", help="Apply patches to source (needs source.srcRoot in config)")
+    pull_p = sub.add_parser("pull", help="[DEPRECATED] 已棄用 — 請改用 codegen")
 
-    gen_p = sub.add_parser("generate", help="Figma → New Frontend",
-        epilog="Examples:\n  figma-sync generate --file-key ABC123 --target react --output ./out\n  figma-sync generate --file-key ABC123 --target flutter --page 'Home'",
+    gen_p = sub.add_parser("generate", help="[DEPRECATED] 已棄用 — 請改用 codegen")
+
+    # ── codegen：新工作流主力命令 ──
+    codegen_p = sub.add_parser("codegen", help="IR/Pencil → React/Vue/HTML/Flutter",
+        epilog="Examples:\n  pdm codegen .pdm/ir-payload.json --target react --output ./out\n  pdm codegen pen-export.json --target vue",
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    gen_p.add_argument("--file-key", help="Figma file key")
-    gen_p.add_argument("--target", choices=["react", "vue", "html", "flutter"], help="Output target")
-    gen_p.add_argument("--output", help="Output directory")
-    gen_p.add_argument("--page", help="Page name to export")
-    gen_p.add_argument("--page-index", type=int, help="Page index to export")
-    gen_p.add_argument("--all-pages", action="store_true", help="Export all pages")
-    gen_p.add_argument("--with-utility-css", action="store_true", help="Emit styles/utility.css and app.css import")
+    codegen_p.add_argument("ir_file", help="IR v2.0 JSON 或 .pen batch_get 匯出的 JSON 檔案")
+    codegen_p.add_argument("--target", choices=["react", "vue", "html", "flutter"], default="html", help="輸出目標")
+    codegen_p.add_argument("--output", default="./generated", help="輸出目錄")
+    codegen_p.add_argument("--page", help="Page name")
+    codegen_p.add_argument("--with-utility-css", action="store_true", help="產出 utility.css")
 
     export_p = sub.add_parser("export-tokens", help="從 IR 產出 design tokens (tokens.json 或 CSS)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="Examples:\n  figma-sync export-tokens\n  figma-sync export-tokens --from-dir .figma-sync --output tokens.json --format css")
-    export_p.add_argument("--from-dir", default=".figma-sync", help="IR 目錄（內含 figma-import-payload.json）")
+        epilog="Examples:\n  pdm export-tokens\n  pdm export-tokens --from-dir .pdm --output tokens.json --format css")
+    export_p.add_argument("--from-dir", default=".pdm", help="IR 目錄（內含 figma-import-payload.json）")
     export_p.add_argument("--output", "-o", default="tokens.json", help="輸出檔路徑")
     export_p.add_argument("--format", choices=["json", "css"], default="json", help="輸出格式")
     export_p.add_argument("--css-prefix", default="--token", help="CSS 變數前綴（僅 format=css 時使用）")
@@ -539,6 +458,8 @@ def main():
         asyncio.run(cmd_push_stories(args, config))
     elif args.command == "preview":
         cmd_preview(args, config)
+    elif args.command == "codegen":
+        cmd_codegen(args, config)
     elif args.command == "pull":
         cmd_pull(args, config)
     elif args.command == "generate":

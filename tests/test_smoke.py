@@ -7,7 +7,7 @@ import pytest
 def test_import_package():
     """套件可正常匯入"""
     import airis_pdm
-    assert airis_pdm.__version__ == "0.4.0"
+    assert airis_pdm.__version__ == "0.5.0"
 
 
 def test_public_api():
@@ -23,13 +23,19 @@ def test_public_api():
         IRBuilderV2,
         preview_naming_tree,
         load_config,
+        PencilToIR,
+        PencilMcpTools,
+        generate_from_ir,
     )
-    assert __version__ == "0.4.0"
+    assert __version__ == "0.5.0"
     assert IRBuilder is IRBuilderV2
     assert callable(extract_dom_tree)
     assert callable(build_ir_from_extraction)
     assert callable(save_ir)
     assert callable(load_config)
+    assert PencilToIR is not None
+    assert PencilMcpTools is not None
+    assert callable(generate_from_ir)
 
 
 def test_ir_builder_build_ir_from_extraction_signature():

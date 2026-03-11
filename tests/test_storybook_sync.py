@@ -89,7 +89,7 @@ class TestCmdPushStoriesSuccess:
 
     @patch("airis_pdm.cli.extract_dom_tree", new_callable=AsyncMock)
     @patch("airis_pdm.cli.build_ir_from_extraction")
-    @patch("airis_pdm.cli.requests.get")
+    @patch("requests.get")
     def test_fetches_stories_json(self, mock_get, mock_build, mock_extract, tmp_path):
         mock_get.return_value = make_stories_response()
         mock_extract.return_value = MINIMAL_EXTRACTION
@@ -105,7 +105,7 @@ class TestCmdPushStoriesSuccess:
 
     @patch("airis_pdm.cli.extract_dom_tree", new_callable=AsyncMock)
     @patch("airis_pdm.cli.build_ir_from_extraction")
-    @patch("airis_pdm.cli.requests.get")
+    @patch("requests.get")
     def test_plugin_payload_written(self, mock_get, mock_build, mock_extract, tmp_path):
         from airis_pdm.cli import cmd_push_stories
 
@@ -122,7 +122,7 @@ class TestCmdPushStoriesSuccess:
 
     @patch("airis_pdm.cli.extract_dom_tree", new_callable=AsyncMock)
     @patch("airis_pdm.cli.build_ir_from_extraction")
-    @patch("airis_pdm.cli.requests.get")
+    @patch("requests.get")
     def test_payload_contains_all_stories(self, mock_get, mock_build, mock_extract, tmp_path):
         from airis_pdm.cli import cmd_push_stories
 
@@ -142,7 +142,7 @@ class TestCmdPushStoriesSuccess:
 
     @patch("airis_pdm.cli.extract_dom_tree", new_callable=AsyncMock)
     @patch("airis_pdm.cli.build_ir_from_extraction")
-    @patch("airis_pdm.cli.requests.get")
+    @patch("requests.get")
     def test_story_names_overridden(self, mock_get, mock_build, mock_extract, tmp_path):
         from airis_pdm.cli import cmd_push_stories
         import copy
@@ -163,7 +163,7 @@ class TestCmdPushStoriesSuccess:
 
     @patch("airis_pdm.cli.extract_dom_tree", new_callable=AsyncMock)
     @patch("airis_pdm.cli.build_ir_from_extraction")
-    @patch("airis_pdm.cli.requests.get")
+    @patch("requests.get")
     def test_stories_laid_out_horizontally(self, mock_get, mock_build, mock_extract, tmp_path):
         from airis_pdm.cli import cmd_push_stories
         import copy
@@ -185,7 +185,7 @@ class TestCmdPushStoriesSuccess:
 
     @patch("airis_pdm.cli.extract_dom_tree", new_callable=AsyncMock)
     @patch("airis_pdm.cli.build_ir_from_extraction")
-    @patch("airis_pdm.cli.requests.get")
+    @patch("requests.get")
     def test_args_selector_not_mutated(self, mock_get, mock_build, mock_extract, tmp_path):
         """P1 #7：push-stories 不應修改 args.selector。"""
         from airis_pdm.cli import cmd_push_stories
@@ -207,7 +207,7 @@ class TestCmdPushStoriesSuccess:
 
 class TestCmdPushStoriesErrors:
 
-    @patch("airis_pdm.cli.requests.get")
+    @patch("requests.get")
     def test_stories_json_404_returns_early(self, mock_get, tmp_path, capsys):
         from airis_pdm.cli import cmd_push_stories
 
@@ -222,7 +222,7 @@ class TestCmdPushStoriesErrors:
         captured = capsys.readouterr()
         assert "stories.json" in captured.out or "Could not" in captured.out
 
-    @patch("airis_pdm.cli.requests.get")
+    @patch("requests.get")
     def test_network_error_handled(self, mock_get, tmp_path, capsys):
         from airis_pdm.cli import cmd_push_stories
 
@@ -237,7 +237,7 @@ class TestCmdPushStoriesErrors:
 
     @patch("airis_pdm.cli.extract_dom_tree", new_callable=AsyncMock)
     @patch("airis_pdm.cli.build_ir_from_extraction")
-    @patch("airis_pdm.cli.requests.get")
+    @patch("requests.get")
     def test_extraction_failure_skips_story(self, mock_get, mock_build, mock_extract, tmp_path, capsys):
         """單一 story 擷取失敗應跳過，不影響其他 story。"""
         from airis_pdm.cli import cmd_push_stories
@@ -261,7 +261,7 @@ class TestCmdPushStoriesErrors:
 
     @patch("airis_pdm.cli.extract_dom_tree", new_callable=AsyncMock)
     @patch("airis_pdm.cli.build_ir_from_extraction")
-    @patch("airis_pdm.cli.requests.get")
+    @patch("requests.get")
     def test_empty_tree_skips_story(self, mock_get, mock_build, mock_extract, tmp_path):
         """DOM 擷取結果為空 tree 的 story 應被跳過。"""
         from airis_pdm.cli import cmd_push_stories
@@ -293,7 +293,7 @@ class TestCmdPushStoriesFilter:
 
     @patch("airis_pdm.cli.extract_dom_tree", new_callable=AsyncMock)
     @patch("airis_pdm.cli.build_ir_from_extraction")
-    @patch("airis_pdm.cli.requests.get")
+    @patch("requests.get")
     def test_filter_regex_limits_stories(self, mock_get, mock_build, mock_extract, tmp_path):
         from airis_pdm.cli import cmd_push_stories
 
