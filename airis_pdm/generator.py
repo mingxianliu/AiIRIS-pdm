@@ -137,6 +137,23 @@ def _css_align(value: str, axis: str) -> str:
     return "flex-start"
 
 
+_FONT_WEIGHT_MAP = {
+    "thin": "100", "extralight": "200", "light": "300", "normal": "400",
+    "regular": "400", "medium": "500", "semibold": "600", "bold": "700",
+    "extrabold": "800", "black": "900",
+}
+
+
+def _css_font_weight(value) -> str:
+    """Convert fontWeight to CSS value — handles int, str-number, or name like 'bold'."""
+    if isinstance(value, (int, float)):
+        return str(int(value))
+    s = str(value).strip().lower()
+    if s.isdigit():
+        return s
+    return _FONT_WEIGHT_MAP.get(s, "400")
+
+
 def _style_dict(node: dict) -> Dict[str, str]:
     styles: Dict[str, str] = {"box-sizing": "border-box"}
     layout = node.get("layout", {})
@@ -181,7 +198,7 @@ def _style_dict(node: dict) -> Dict[str, str]:
     if text:
         styles["font-size"] = f"{int(text.get('fontSize',14))}px"
         styles["font-family"] = text.get("fontFamily", "Inter")
-        styles["font-weight"] = str(int(text.get("fontWeight", 400)))
+        styles["font-weight"] = _css_font_weight(text.get("fontWeight", 400))
         if text.get("lineHeight"):
             styles["line-height"] = f"{int(text['lineHeight'])}px"
         styles["letter-spacing"] = f"{text.get('letterSpacing',0)}px"
