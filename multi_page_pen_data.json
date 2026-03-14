@@ -1,0 +1,80 @@
+
+[
+  {
+    "id": "hzBPI",
+    "name": "DashboardPage",
+    "type": "frame",
+    "width": 1440,
+    "height": 900,
+    "fill": "#FFFFFF",
+    "layout": "vertical",
+    "padding": 40,
+    "gap": 20,
+    "children": [
+      {
+        "id": "ILdPq",
+        "type": "text",
+        "content": "Dashboard Home",
+        "fontSize": 32,
+        "fontWeight": "bold",
+        "fill": "#111827"
+      },
+      {
+        "id": "JRvic",
+        "name": "NavLink-to-Profile",
+        "type": "frame",
+        "fill": "#3B82F6",
+        "cornerRadius": 8,
+        "padding": [8, 16],
+        "children": [
+          {
+            "id": "JHWSo",
+            "type": "text",
+            "content": "Go to Profile",
+            "fill": "#FFFFFF",
+            "fontSize": 16
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "toSpj",
+    "name": "ProfilePage",
+    "type": "frame",
+    "width": 1440,
+    "height": 900,
+    "fill": "#F3F4F6",
+    "layout": "vertical",
+    "padding": 40,
+    "gap": 20,
+    "x": 1600,
+    "children": [
+      {
+        "id": "GJWcI",
+        "type": "text",
+        "content": "User Profile",
+        "fontSize": 32,
+        "fontWeight": "bold",
+        "fill": "#111827"
+      },
+      {
+        "id": "SvSeL",
+        "name": "NavLink-to-Dash",
+        "type": "frame",
+        "fill": "#10B981",
+        "cornerRadius": 8,
+        "padding": [8, 16],
+        "children": [
+          {
+            "id": "Cor4G",
+            "type": "text",
+            "content": "Back to Dashboard",
+            "fill": "#FFFFFF",
+            "fontSize": 16
+          }
+        ]
+      }
+    ]
+  }
+]
