@@ -30,6 +30,8 @@ from .code_patcher import CodePatcher, find_files_by_selector, url_to_local_path
 from .config import load_config, validate_config
 from . import design_assets
 from .token_export import extract_tokens_from_ir, export_tokens
+from .theme_manager import ThemeManager
+from .visual_compliance import run_visual_compliance, run_visual_compliance_sync, VisualComplianceResult
 
 # 向下相容（deprecated — 將在 0.6.0 移除）
 try:
@@ -71,6 +73,10 @@ __all__ = [
     "design_assets",
     "extract_tokens_from_ir",
     "export_tokens",
+    "ThemeManager",
+    "run_visual_compliance",
+    "run_visual_compliance_sync",
+    "VisualComplianceResult",
     # Deprecated (Figma)
     "FigmaAPIClient",
     "FigmaToIR",

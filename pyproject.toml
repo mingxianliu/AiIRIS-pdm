@@ -24,6 +24,7 @@ classifiers = [
 dependencies = [
     "playwright>=1.40",
     "watchdog>=3.0",
+    "Pillow>=9.0",
 ]
 
 [project.optional-dependencies]

@@ -8,9 +8,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, TYPE_CHECKING
 
 from .figma_reader import FigmaAPIClient, FigmaToIR
+
+if TYPE_CHECKING:
+    from .theme_manager import ThemeManager
 
 
 @dataclass
@@ -24,6 +27,7 @@ class StyleSheet:
     prefix: str
     counter: int = 0
     rules: Dict[str, Dict[str, str]] = None
+    theme_manager: Optional["ThemeManager"] = None
 
     def __post_init__(self) -> None:
         if self.rules is None:
@@ -33,7 +37,7 @@ class StyleSheet:
         self.counter += 1
         base = _kebab(node.get("figmaName", "node"))
         class_name = f"{self.prefix}-{base}-{self.counter}"
-        self.rules[class_name] = _style_dict(node)
+        self.rules[class_name] = _style_dict(node, self.theme_manager)
         return class_name
 
     def to_css(self) -> str:
@@ -154,7 +158,7 @@ def _css_font_weight(value) -> str:
     return _FONT_WEIGHT_MAP.get(s, "400")
 
 
-def _style_dict(node: dict) -> Dict[str, str]:
+def _style_dict(node: dict, theme_manager: Optional["ThemeManager"] = None) -> Dict[str, str]:
     styles: Dict[str, str] = {"box-sizing": "border-box"}
     layout = node.get("layout", {})
     width = layout.get("width")
@@ -166,7 +170,8 @@ def _style_dict(node: dict) -> Dict[str, str]:
 
     ir_styles = node.get("styles", {}) or {}
     if ir_styles.get("backgroundColor"):
-        styles["background-color"] = ir_styles["backgroundColor"]
+        val = ir_styles["backgroundColor"]
+        styles["background-color"] = theme_manager.resolve_color(val) if theme_manager else val
     if ir_styles.get("opacity") is not None:
         styles["opacity"] = str(ir_styles["opacity"])
     if ir_styles.get("borderRadius"):
@@ -176,6 +181,7 @@ def _style_dict(node: dict) -> Dict[str, str]:
         border = ir_styles["border"]
         width = int(border.get("width", 1))
         color = border.get("color", "#000")
+        color = theme_manager.resolve_color(color) if theme_manager else color
         style = "dashed" if border.get("style") == "DASHED" else "solid"
         styles["border"] = f"{width}px {style} {color}"
     if ir_styles.get("shadow"):
@@ -186,7 +192,8 @@ def _style_dict(node: dict) -> Dict[str, str]:
         al = node["autoLayout"]
         styles["display"] = "flex"
         styles["flex-direction"] = "row" if al.get("direction") == "HORIZONTAL" else "column"
-        styles["gap"] = f"{int(al.get('spacing',0))}px"
+        sp = al.get("spacing", 0)
+        styles["gap"] = theme_manager.resolve_spacing(sp) if theme_manager else f"{int(sp)}px"
         styles["padding-top"] = f"{int(al.get('paddingTop',0))}px"
         styles["padding-right"] = f"{int(al.get('paddingRight',0))}px"
         styles["padding-bottom"] = f"{int(al.get('paddingBottom',0))}px"
@@ -196,14 +203,16 @@ def _style_dict(node: dict) -> Dict[str, str]:
 
     text = node.get("text")
     if text:
-        styles["font-size"] = f"{int(text.get('fontSize',14))}px"
+        fs = text.get("fontSize", 14)
+        styles["font-size"] = theme_manager.resolve_font_size(fs) if theme_manager else f"{int(fs)}px"
         styles["font-family"] = text.get("fontFamily", "Inter")
         styles["font-weight"] = _css_font_weight(text.get("fontWeight", 400))
         if text.get("lineHeight"):
             styles["line-height"] = f"{int(text['lineHeight'])}px"
         styles["letter-spacing"] = f"{text.get('letterSpacing',0)}px"
         styles["text-align"] = text.get("textAlign", "LEFT").lower()
-        styles["color"] = text.get("color", "#000")
+        color = text.get("color", "#000")
+        styles["color"] = theme_manager.resolve_color(color) if theme_manager else color
 
     return styles
 
@@ -364,7 +373,14 @@ def _visually_hidden_css() -> str:
     )
 
 
-def _write_app_css(base: Path, content: str, include_utility_css: bool) -> None:
+def _write_app_css(
+    base: Path,
+    content: str,
+    include_utility_css: bool,
+    theme_manager: Optional["ThemeManager"] = None,
+) -> None:
+    if theme_manager:
+        content = theme_manager.to_css_root() + "\n\n" + content
     if include_utility_css:
         app_css = "@import './utility.css';\n\n" + content
         _write(base / "styles" / "utility.css", _visually_hidden_css())
@@ -449,6 +465,7 @@ def generate_from_ir(
     output_dir: str = "./generated",
     page_name: Optional[str] = None,
     with_utility_css: bool = False,
+    use_design_tokens: bool = False,
 ) -> dict:
     """Generate frontend code from IR data (no Figma API needed).
 
@@ -463,10 +480,14 @@ def generate_from_ir(
         output_dir: Directory to write generated files.
         page_name: Optional page name; auto-detected from IR if omitted.
         with_utility_css: Include utility CSS.
+        use_design_tokens: If True, extract design tokens from IR and output
+                           :root CSS variables; generated CSS uses var(--token-*).
 
     Returns:
         dict with 'files' (list of relative paths written) and 'target'.
     """
+    from .theme_manager import ThemeManager
+
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
     files_before = set(_list_files(output_path))
@@ -482,6 +503,11 @@ def generate_from_ir(
         name = page_name or ir_data.get("figmaName") or ir_data.get("name") or "Page"
         pages.append((name, ir_data))
 
+    theme_manager: Optional["ThemeManager"] = None
+    if use_design_tokens and pages:
+        theme_manager = ThemeManager()
+        theme_manager.load_from_ir({"tree": pages[0][1]})
+
     for pg_name, ir_page in pages:
         components: Dict[str, ComponentSpec] = {}
         _collect_components(ir_page, components)
@@ -492,6 +518,7 @@ def generate_from_ir(
             ir_page=ir_page,
             components=components,
             include_utility_css=with_utility_css,
+            theme_manager=theme_manager,
         )
 
     files_after = set(_list_files(output_path))
@@ -516,6 +543,7 @@ def _generate_target(
     ir_page: dict,
     components: Dict[str, ComponentSpec],
     include_utility_css: bool,
+    theme_manager: Optional["ThemeManager"] = None,
 ) -> None:
     target = target.lower()
     base = Path(output_dir)
@@ -524,19 +552,19 @@ def _generate_target(
     bundle = StyleBundle(sheets=[])
 
     if target == "html":
-        sheet = StyleSheet(prefix=page_slug)
+        sheet = StyleSheet(prefix=page_slug, theme_manager=theme_manager)
         body = "\n".join(_render_html(child, sheet, 1) for child in page_children)
         html = _build_html_page(page_name, body, "./styles/app.css")
         _write(base / "index.html", html)
         bundle.add(sheet)
-        _write_app_css(base, bundle.to_css(), include_utility_css)
+        _write_app_css(base, bundle.to_css(), include_utility_css, theme_manager)
         return
 
     if target == "react":
         page_component_name = _sanitize_name(page_name)
         for spec in components.values():
             comp_file = base / "components" / f"{spec.name}.tsx"
-            sheet = StyleSheet(prefix=_kebab(spec.name))
+            sheet = StyleSheet(prefix=_kebab(spec.name), theme_manager=theme_manager)
             variants = []
             for variant_name, node in spec.variants.items():
                 variant_label = variant_name or "Default"
@@ -557,7 +585,7 @@ def _generate_target(
             _write(base / "components" / f"{spec.name}.module.css", sheet.to_css())
             bundle.add(sheet)
 
-        page_sheet = StyleSheet(prefix=page_slug)
+        page_sheet = StyleSheet(prefix=page_slug, theme_manager=theme_manager)
         page_body = "\n".join(_render_react(child, page_sheet, 2, True) for child in page_children)
         page_content = (
             f"import styles from './{_sanitize_name(page_name)}.module.css';\n\n"
@@ -566,7 +594,7 @@ def _generate_target(
         _write(base / "pages" / f"{page_component_name}.tsx", page_content)
         _write(base / "pages" / f"{page_component_name}.module.css", page_sheet.to_css())
         bundle.add(page_sheet)
-        _write_app_css(base, bundle.to_css(), include_utility_css)
+        _write_app_css(base, bundle.to_css(), include_utility_css, theme_manager)
 
         main_content = (
             "import React from 'react';\n"
@@ -591,7 +619,7 @@ def _generate_target(
         page_component_name = _sanitize_name(page_name)
         for spec in components.values():
             comp_file = base / "components" / f"{spec.name}.vue"
-            sheet = StyleSheet(prefix=_kebab(spec.name))
+            sheet = StyleSheet(prefix=_kebab(spec.name), theme_manager=theme_manager)
             variant_blocks = []
             for variant_name, node in spec.variants.items():
                 v = variant_name or "Default"
@@ -613,7 +641,7 @@ def _generate_target(
             _write(comp_file, comp_content)
             bundle.add(sheet)
 
-        page_sheet = StyleSheet(prefix=page_slug)
+        page_sheet = StyleSheet(prefix=page_slug, theme_manager=theme_manager)
         page_body = "\n".join(_render_vue(child, page_sheet, 2) for child in page_children)
         page_content = (
             f"<template>\n  <div>\n{page_body}\n  </div>\n</template>\n\n"
@@ -623,7 +651,7 @@ def _generate_target(
         )
         _write(base / "pages" / f"{page_component_name}.vue", page_content)
         bundle.add(page_sheet)
-        _write_app_css(base, bundle.to_css(), include_utility_css)
+        _write_app_css(base, bundle.to_css(), include_utility_css, theme_manager)
 
         app_content = (
             "<template>\n"
