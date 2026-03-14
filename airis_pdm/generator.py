@@ -508,7 +508,7 @@ def generate_from_ir(
         theme_manager = ThemeManager()
         theme_manager.load_from_ir({"tree": pages[0][1]})
 
-    for pg_name, ir_page in pages:
+    for i, (pg_name, ir_page) in enumerate(pages):
         components: Dict[str, ComponentSpec] = {}
         _collect_components(ir_page, components)
         _generate_target(
@@ -519,6 +519,7 @@ def generate_from_ir(
             components=components,
             include_utility_css=with_utility_css,
             theme_manager=theme_manager,
+            is_first=(i == 0),
         )
 
     files_after = set(_list_files(output_path))
@@ -544,6 +545,7 @@ def _generate_target(
     components: Dict[str, ComponentSpec],
     include_utility_css: bool,
     theme_manager: Optional["ThemeManager"] = None,
+    is_first: bool = True,
 ) -> None:
     target = target.lower()
     base = Path(output_dir)
@@ -554,8 +556,13 @@ def _generate_target(
     if target == "html":
         sheet = StyleSheet(prefix=page_slug, theme_manager=theme_manager)
         body = "\n".join(_render_html(child, sheet, 1) for child in page_children)
-        html = _build_html_page(page_name, body, "./styles/app.css")
-        _write(base / "index.html", html)
+        if is_first:
+            html = _build_html_page(page_name, body, "./styles/app.css")
+            _write(base / "index.html", html)
+        else:
+            (base / "pages").mkdir(parents=True, exist_ok=True)
+            html = _build_html_page(page_name, body, "../styles/app.css")
+            _write(base / "pages" / f"{page_slug}.html", html)
         bundle.add(sheet)
         _write_app_css(base, bundle.to_css(), include_utility_css, theme_manager)
         return
