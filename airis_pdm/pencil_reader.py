@@ -315,7 +315,10 @@ class PencilToIR:
         # Fill → SOLID
         fill = node.get("fill")
         if fill:
-            styles["fills"] = [self._parse_fill(fill)]
+            parsed_fill = self._parse_fill(fill)
+            styles["fills"] = [parsed_fill]
+            if parsed_fill["type"] == "SOLID":
+                styles["backgroundColor"] = parsed_fill["color"]
 
         # Opacity
         opacity = node.get("opacity")
@@ -414,7 +417,7 @@ class PencilToIR:
             "fontSize": node.get("fontSize", 14),
             "fontFamily": node.get("fontFamily", "Inter"),
             "fontWeight": node.get("fontWeight", 400),
-            "color": self._normalize_color(node.get("color", "#000000")),
+            "color": self._normalize_color(node.get("color", node.get("fill", "#000000"))),
             "textAlign": (node.get("textAlign") or "LEFT").upper(),
         }
 
