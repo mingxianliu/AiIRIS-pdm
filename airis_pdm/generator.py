@@ -220,17 +220,27 @@ def _style_dict(node: dict, theme_manager: Optional["ThemeManager"] = None) -> D
 def _render_html(node: dict, sheet: StyleSheet, indent: int = 0) -> str:
     pad = "  " * indent
     tag = "div"
+    class_name = sheet.add_node(node)
+    
+    # Check for href in metadata to support navigation
+    href = node.get("metadata", {}).get("href")
+    attrs = f"class=\"{class_name}\""
+    if href:
+        tag = "links" if node.get("figmaType") == "TEXT" else "a"
+        if tag == "a":
+            attrs += f" href=\"{href}\""
+
     if node.get("figmaType") == "TEXT":
         content = node.get("text", {}).get("characters", "")
-        class_name = sheet.add_node(node)
+        if href:
+             return f"{pad}<a {attrs}>{content}</a>"
         return f"{pad}<span class=\"{class_name}\">{content}</span>"
 
-    class_name = sheet.add_node(node)
     children = node.get("children", []) or []
     if not children:
-        return f"{pad}<{tag} class=\"{class_name}\"></{tag}>"
+        return f"{pad}<{tag} {attrs}></{tag}>"
     inner = "\n".join(_render_html(child, sheet, indent + 1) for child in children)
-    return f"{pad}<{tag} class=\"{class_name}\">\n{inner}\n{pad}</{tag}>"
+    return f"{pad}<{tag} {attrs}>\n{inner}\n{pad}</{tag}>"
 
 
 def _render_vue(node: dict, sheet: StyleSheet, indent: int = 0) -> str:
@@ -508,6 +518,7 @@ def generate_from_ir(
         theme_manager = ThemeManager()
         theme_manager.load_from_ir({"tree": pages[0][1]})
 
+    bundle = StyleBundle(sheets=[])
     for i, (pg_name, ir_page) in enumerate(pages):
         components: Dict[str, ComponentSpec] = {}
         _collect_components(ir_page, components)
@@ -520,6 +531,7 @@ def generate_from_ir(
             include_utility_css=with_utility_css,
             theme_manager=theme_manager,
             is_first=(i == 0),
+            bundle=bundle,
         )
 
     files_after = set(_list_files(output_path))
@@ -546,16 +558,18 @@ def _generate_target(
     include_utility_css: bool,
     theme_manager: Optional["ThemeManager"] = None,
     is_first: bool = True,
+    bundle: Optional["StyleBundle"] = None,
 ) -> None:
     target = target.lower()
     base = Path(output_dir)
     page_slug = _kebab(page_name)
     page_children = ir_page.get("children", []) or []
-    bundle = StyleBundle(sheets=[])
+    if bundle is None:
+        bundle = StyleBundle(sheets=[])
 
     if target == "html":
         sheet = StyleSheet(prefix=page_slug, theme_manager=theme_manager)
-        body = "\n".join(_render_html(child, sheet, 1) for child in page_children)
+        body = _render_html(ir_page, sheet, 1)
         if is_first:
             html = _build_html_page(page_name, body, "./styles/app.css")
             _write(base / "index.html", html)

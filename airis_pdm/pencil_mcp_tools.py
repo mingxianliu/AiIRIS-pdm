@@ -35,6 +35,7 @@ class PencilMcpTools:
         pen_data: List[dict],
         target: str = "vue",
         use_design_tokens: bool = False,
+        multi_page: bool = False,
     ) -> str:
         """
         從 Pencil AI 節點資料直接生成前端代碼。
@@ -43,9 +44,10 @@ class PencilMcpTools:
             pen_data — 由 mcp_pencil_batch_get 取得的節點列表
             target   — 目標框架 (vue, react, html, flutter)
             use_design_tokens — 若為 True，產出 :root 變數並以 var(--token-*) 取代硬編碼顏色/間距
+            multi_page — 若為 True，將多個根節點視為獨立頁面
         """
         try:
-            ir_doc = self._converter.convert(pen_data)
+            ir_doc = self._converter.convert(pen_data, multi_page=multi_page)
             result = generate_from_ir(
                 ir_data=ir_doc["tree"],
                 target=target,

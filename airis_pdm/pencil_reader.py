@@ -34,11 +34,12 @@ class PencilToIR:
         self._page_name = page_name
         self._node_count = 0
 
-    def convert(self, pen_nodes: list[dict] | dict) -> dict:
+    def convert(self, pen_nodes: list[dict] | dict, multi_page: bool = False) -> dict:
         """主入口：將 batch_get 的回傳轉為完整 IR 文件。
 
         Args:
             pen_nodes: 單一節點 dict 或節點列表（batch_get 回傳格式）。
+            multi_page: 若為 True，將多個根節點視為獨立頁面。
 
         Returns:
             IR v2.0 頂層文件結構。
@@ -48,11 +49,19 @@ class PencilToIR:
         if isinstance(pen_nodes, dict):
             pen_nodes = [pen_nodes]
 
-        # 若只有一個根節點，直接轉換
-        if len(pen_nodes) == 1:
+        if multi_page:
+            # 將每個根節點轉換為獨立頁面結構
+            pages = []
+            for n in pen_nodes:
+                p_tree = self._convert_node(n)
+                if p_tree:
+                    pages.append(p_tree)
+            tree = {"pages": pages}
+        elif len(pen_nodes) == 1:
+            # 若只有一個根節點，直接轉換
             tree = self._convert_node(pen_nodes[0])
         else:
-            # 多個根節點包裝成頁面
+            # 多個根節點包裝成單一頁面
             children = [self._convert_node(n) for n in pen_nodes]
             children = [c for c in children if c is not None]
             tree = {
@@ -94,16 +103,24 @@ class PencilToIR:
         self._node_count += 1
         node_type = node.get("type", "frame")
 
+        res: Optional[dict] = None
         if node_type == "text":
-            return self._convert_text(node)
-        if node_type == "icon_font":
-            return self._convert_icon(node)
-        if node_type == "rectangle":
-            return self._convert_rectangle(node)
-        if node_type == "ref":
-            return self._convert_ref(node)
-        # frame 或未知類型
-        return self._convert_frame(node)
+            res = self._convert_text(node)
+        elif node_type == "icon_font":
+            res = self._convert_icon(node)
+        elif node_type == "rectangle":
+            res = self._convert_rectangle(node)
+        elif node_type == "ref":
+            res = self._convert_ref(node)
+        else:
+            # frame 或未知類型
+            res = self._convert_frame(node)
+
+        # 傳遞 Metadata
+        if res and "metadata" in node:
+            res["metadata"] = node["metadata"]
+        
+        return res
 
     def _convert_frame(self, node: dict) -> dict:
         """frame → FRAME / AUTO_LAYOUT"""
