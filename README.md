@@ -1,4 +1,4 @@
-# AiIRIS-pdm
+# AiPdM
 
 **AiIRIS Project Design Model — Spec → Pencil AI → Fine-tune → React/Vue Code**
 
@@ -103,6 +103,22 @@ aipdm figmai flow --live --host localhost --port 3055 --pattern "[Page]" --frame
 
 **FigmAI 文件索引**：[`docs/SNAPSHOT_PARITY_PROCESS.md`](docs/SNAPSHOT_PARITY_PROCESS.md)（golden／baseline／CI）、[`docs/FIGMA_CONSOLE_OPS.md`](docs/FIGMA_CONSOLE_OPS.md)（本機 figma-console、重試、除錯）、[`docs/SKILLS_CONTRACT.md`](docs/SKILLS_CONTRACT.md)（skills 契約與 golden 維護）。
 **第一次上手（chain／flow 一頁版）**：[`docs/QUICKSTART_FIGMAI.md`](docs/QUICKSTART_FIGMAI.md)。
+
+### 一鍵 Live 驗證（收斂命令）
+
+```bash
+NODE_IDS="263:3241,263:3242,263:3243" make smoke-live
+```
+
+可選覆寫：
+
+```bash
+HOST=localhost PORT=3055 DEPTH=8 \
+OUTPUT=./.tmp_verify/smoke_live \
+BASELINE_REPORT=./tdd-output/smoke-baseline.json \
+NODE_IDS="263:3241,263:3242,263:3243" \
+make smoke-live
+```
 
 底層轉換與 **`FigmaToIR`** 一致，**`style` 欄位**為扁平 CSS 對照（與 `generator._style_dict` 同源邏輯），結構化 **`layout` / `styles` / `text` / `autoLayout`** 一併保留以便無損還原。
 
