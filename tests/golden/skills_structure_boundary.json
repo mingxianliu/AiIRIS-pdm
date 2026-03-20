@@ -1,0 +1,22 @@
+{
+  "spec": {
+    "structure": {
+      "variants": [
+        {
+          "size": "default",
+          "density": "default",
+          "height": 500,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "spacing": 24,
+          "borderRadius": 20
+        }
+      ]
+    }
+  },
+  "markdown": "# StructTest — Structure\n\n- 高度: 500\n"
+}

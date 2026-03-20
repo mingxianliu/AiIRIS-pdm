@@ -1,0 +1,19 @@
+{
+  "name": "Minimal",
+  "id": "minimal-root",
+  "sections": [
+    {
+      "id": "min-sec",
+      "type": "frame",
+      "name": "Content",
+      "children": [
+        {
+          "id": "min-text",
+          "type": "text",
+          "name": "Hello",
+          "props": { "text": "Hello World" }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,120 @@
+{
+  "simple_button": {
+    "name": "Button,Size=md",
+    "sourceType": "FRAME",
+    "layout": {"x": 0, "y": 0, "width": 120, "height": 40},
+    "styles": {"backgroundColor": "#3366ff", "borderRadius": {"topLeft": 8}},
+    "autoLayout": {"spacing": 8},
+    "children": [
+      {
+        "name": "Label",
+        "sourceType": "TEXT",
+        "layout": {"x": 10, "y": 10, "width": 60, "height": 20},
+        "text": {"characters": "Submit"},
+        "children": []
+      }
+    ],
+    "metadata": {
+      "componentProperties": {
+        "Size": "md",
+        "Primary": true
+      }
+    }
+  },
+  "complex_node": {
+    "name": "Card,Status=active",
+    "sourceType": "FRAME",
+    "layout": {"x": 0, "y": 0, "width": 300, "height": 200},
+    "styles": {"backgroundColor": "#ffffff"},
+    "children": [
+      {
+        "name": "Header",
+        "sourceType": "FRAME",
+        "layout": {"x": 0, "y": 0, "width": 300, "height": 50},
+        "children": [
+          {
+            "name": "Title",
+            "sourceType": "TEXT",
+            "layout": {"x": 10, "y": 10, "width": 200, "height": 30},
+            "text": {"characters": "Hello World"}
+          }
+        ]
+      },
+      {
+        "name": "Body",
+        "sourceType": "FRAME",
+        "layout": {"x": 0, "y": 50, "width": 300, "height": 100},
+        "children": [
+          {
+            "name": "Icon",
+            "sourceType": "RECTANGLE",
+            "layout": {"x": 10, "y": 10, "width": 24, "height": 24},
+            "styles": {"backgroundColor": "#ff0000"}
+          }
+        ]
+      }
+    ]
+  },
+  "malformed_node": {
+    "name": "ErrorNode",
+    "sourceType": "TEXT",
+    "layout": {"x": "invalid", "y": null},
+    "styles": "not-a-dict"
+  },
+  "anatomy_boundary": {
+    "name": "DeepTree",
+    "sourceType": "FRAME",
+    "children": [
+      {
+        "name": "L1",
+        "sourceType": "FRAME",
+        "children": [
+          {
+            "name": "L2",
+            "sourceType": "FRAME",
+            "children": [{"name": "L3", "sourceType": "TEXT"}]
+          }
+        ]
+      }
+    ]
+  },
+  "api_spec_boundary": {
+    "name": "PropHeavy",
+    "metadata": {
+      "componentProperties": {
+        "Visible": true,
+        "Label": "Hello",
+        "Count": "10",
+        "Type": "Primary"
+      }
+    }
+  },
+  "color_annotation_boundary": {
+    "name": "ColorMix",
+    "styles": {"backgroundColor": "#ff0000"},
+    "children": [
+      {"name": "Sub1", "styles": {"backgroundColor": "#00ff00"}},
+      {"name": "Sub2", "styles": {"backgroundColor": "#0000ff"}}
+    ]
+  },
+  "properties_boundary": {
+    "name": "Button, Size=Large, Theme=Dark, state=hover, noise=true, extra"
+  },
+  "structure_boundary": {
+    "name": "StructTest",
+    "layout": {"height": 500},
+    "autoLayout": {"spacing": 24},
+    "styles": {"borderRadius": {"topLeft": 20}}
+  },
+  "screen_reader_boundary": {
+    "name": "Accessibility",
+    "children": [
+      {"name": "Icon", "sourceType": "RECTANGLE"},
+      {"name": "Label", "sourceType": "TEXT", "text": {"characters": "Read Me First"}}
+    ]
+  },
+  "empty_node": {
+    "name": "",
+    "sourceType": "FRAME"
+  }
+}

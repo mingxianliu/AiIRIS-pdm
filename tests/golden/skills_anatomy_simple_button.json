@@ -1,0 +1,18 @@
+{
+  "spec": {
+    "anatomy": {
+      "layers": [
+        {
+          "index": 1,
+          "name": "Label",
+          "type": "TEXT",
+          "x": 10,
+          "y": 10,
+          "isOptional": false,
+          "description": "文字圖層"
+        }
+      ]
+    }
+  },
+  "markdown": "# Button,Size=md — Anatomy\n\n- 圖層數: 1\n"
+}

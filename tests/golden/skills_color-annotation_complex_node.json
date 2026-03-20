@@ -1,0 +1,31 @@
+{
+  "spec": {
+    "colorAnnotation": {
+      "elements": [
+        {
+          "layerName": "Card,Status=active",
+          "property": "backgroundColor",
+          "states": [
+            {
+              "state": "default",
+              "tokenName": "(no token)",
+              "resolvedValue": "#ffffff"
+            }
+          ]
+        },
+        {
+          "layerName": "Icon",
+          "property": "backgroundColor",
+          "states": [
+            {
+              "state": "default",
+              "tokenName": "(no token)",
+              "resolvedValue": "#ff0000"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "markdown": "# Card,Status=active — Color Annotation\n\n- 色彩元素: 2\n"
+}

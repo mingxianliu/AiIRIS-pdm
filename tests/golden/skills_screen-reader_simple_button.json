@@ -1,0 +1,34 @@
+{
+  "spec": {
+    "screenReader": {
+      "platforms": {
+        "voiceover": {
+          "role": "UIView",
+          "label": "Submit",
+          "traits": [],
+          "actions": [
+            "activate"
+          ]
+        },
+        "talkback": {
+          "role": "android.view.View",
+          "label": "Submit",
+          "traits": [],
+          "actions": [
+            "click"
+          ]
+        },
+        "aria": {
+          "role": "generic",
+          "label": "Submit",
+          "traits": [],
+          "actions": [
+            "click",
+            "keypress"
+          ]
+        }
+      }
+    }
+  },
+  "markdown": "# Button,Size=md — Screen Reader\n\n- Label: Submit\n"
+}

@@ -1,0 +1,61 @@
+{
+  "spec": {
+    "name": "ProjectAuth",
+    "id": "root-auth",
+    "sections": [
+      {
+        "id": "sec-1",
+        "type": "form",
+        "name": "LoginForm",
+        "children": [
+          {
+            "id": "sec-1-title",
+            "type": "text",
+            "name": "Title",
+            "props": {
+              "text": "Project Sign In"
+            }
+          },
+          {
+            "id": "sec-1-btn",
+            "type": "button",
+            "name": "Submit",
+            "props": {
+              "label": "Continue"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "flow_live": {
+    "pattern": "[Page]",
+    "search_nodes": [
+      { "id": "p:1", "name": "[Page] Login", "type": "FRAME" },
+      { "id": "p:2", "name": "[Page] Register", "type": "FRAME" }
+    ],
+    "nodes_by_id": {
+      "p:1": {
+        "id": "p:1",
+        "name": "[Page] Login",
+        "type": "FRAME",
+        "visible": true,
+        "absoluteBoundingBox": { "x": 0, "y": 0, "width": 320, "height": 640 },
+        "children": []
+      },
+      "p:2": {
+        "id": "p:2",
+        "name": "[Page] Register",
+        "type": "FRAME",
+        "visible": true,
+        "absoluteBoundingBox": { "x": 0, "y": 0, "width": 320, "height": 640 },
+        "children": []
+      }
+    }
+  },
+  "expected": {
+    "chain_contains_text": "Project Sign In",
+    "flow_generated_count": 2,
+    "flow_slugs": ["login", "register"]
+  }
+}

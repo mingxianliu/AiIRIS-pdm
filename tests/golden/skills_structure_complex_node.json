@@ -1,0 +1,22 @@
+{
+  "spec": {
+    "structure": {
+      "variants": [
+        {
+          "size": "default",
+          "density": "default",
+          "height": 200,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "spacing": 0,
+          "borderRadius": null
+        }
+      ]
+    }
+  },
+  "markdown": "# Card,Status=active — Structure\n\n- 高度: 200\n"
+}

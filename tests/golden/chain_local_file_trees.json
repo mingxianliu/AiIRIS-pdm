@@ -1,0 +1,24 @@
+{
+  "_doc": "Expected file trees for chain-local output per target. Relative to output_dir.",
+  "html": [
+    "index.html",
+    "styles/app.css"
+  ],
+  "vue": [
+    "App.vue",
+    "components/AuthLogin.vue",
+    "index.html",
+    "main.ts",
+    "pages/AuthLogin.vue",
+    "styles/app.css"
+  ],
+  "react": [
+    "components/AuthLogin.module.css",
+    "components/AuthLogin.tsx",
+    "index.html",
+    "main.tsx",
+    "pages/AuthLogin.module.css",
+    "pages/AuthLogin.tsx",
+    "styles/app.css"
+  ]
+}

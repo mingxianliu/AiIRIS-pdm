@@ -1,0 +1,37 @@
+{
+  "_doc": "Golden for chain-remote mock tests: expected RPC sequences, validation fields, state behavior.",
+  "pull_only": {
+    "success": true,
+    "target_node_id": "1:1",
+    "synced_root_id": null,
+    "deleted_count": 0,
+    "orphaned_count": 0,
+    "validation_valid": true,
+    "expected_rpc_sequence": ["getNode"]
+  },
+  "sync_then_pull": {
+    "success": true,
+    "expected_rpc_includes": ["createNode", "getNode"],
+    "synced_root_id_not_null": true
+  },
+  "idempotent_update_first": {
+    "success": true,
+    "first_rpc": "updateNode",
+    "target_node_id": "10:10"
+  },
+  "orphan_strategy": {
+    "orphaned_count": 1,
+    "orphan_key": "removed-1",
+    "orphan_figma_id": "11:11"
+  },
+  "delete_strategy": {
+    "deleted_count": 1,
+    "expected_rpc_includes": ["deleteNode"]
+  },
+  "state_json_schema": {
+    "required_keys": ["nodes", "orphans", "lastSync"],
+    "nodes_type": "object",
+    "orphans_type": "object",
+    "lastSync_type": "string"
+  }
+}

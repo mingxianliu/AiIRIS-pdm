@@ -1,0 +1,144 @@
+name: Figma Console Smoke Manual
+
+on:
+  workflow_dispatch:
+    inputs:
+      smoke_host:
+        description: "figma-console host"
+        required: false
+        default: "127.0.0.1"
+      smoke_port:
+        description: "figma-console port"
+        required: false
+        default: "3055"
+      search_pattern:
+        description: "searchNodes pattern"
+        required: false
+        default: "[Page]"
+      smoke_node_id:
+        description: "getNode node id"
+        required: true
+      rpc_timeout:
+        description: "RPC timeout seconds"
+        required: false
+        default: "20"
+      rpc_retries:
+        description: "RPC retry count"
+        required: false
+        default: "2"
+      rpc_backoff:
+        description: "RPC backoff base seconds"
+        required: false
+        default: "0.5"
+      rpc_backoff_max:
+        description: "RPC backoff max seconds"
+        required: false
+        default: "2.0"
+
+jobs:
+  figma-console-smoke:
+    name: Manual Figma Console Smoke
+    runs-on: [self-hosted, macOS]
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,figma-console]"
+
+      - name: Prepare artifact directory
+        run: |
+          mkdir -p .artifacts/figma-console-smoke
+          cat > .artifacts/figma-console-smoke/metadata.json <<EOF
+          {
+            "workflow": "figma-console-smoke-manual",
+            "run_id": "${{ github.run_id }}",
+            "run_attempt": "${{ github.run_attempt }}",
+            "ref": "${{ github.ref_name }}",
+            "sha": "${{ github.sha }}",
+            "runner_name": "${{ runner.name }}",
+            "smoke_host": "${{ inputs.smoke_host }}",
+            "smoke_port": "${{ inputs.smoke_port }}",
+            "search_pattern": "${{ inputs.search_pattern }}",
+            "smoke_node_id": "${{ inputs.smoke_node_id }}",
+            "rpc_timeout": "${{ inputs.rpc_timeout }}",
+            "rpc_retries": "${{ inputs.rpc_retries }}",
+            "rpc_backoff": "${{ inputs.rpc_backoff }}",
+            "rpc_backoff_max": "${{ inputs.rpc_backoff_max }}"
+          }
+          EOF
+          cat > .artifacts/figma-console-smoke/command-lines.txt <<EOF
+          python -m airis_pdm.cli figma-console serve --host 0.0.0.0 --port "${{ inputs.smoke_port }}"
+          python -m airis_pdm.cli figma-console request searchNodes --host "${{ inputs.smoke_host }}" --port "${{ inputs.smoke_port }}" --params "{\"pattern\":\"${{ inputs.search_pattern }}\"}" --rpc-timeout "${{ inputs.rpc_timeout }}" --rpc-retries "${{ inputs.rpc_retries }}" --rpc-backoff "${{ inputs.rpc_backoff }}" --rpc-backoff-max "${{ inputs.rpc_backoff_max }}"
+          python -m airis_pdm.cli figma-console request getNode --host "${{ inputs.smoke_host }}" --port "${{ inputs.smoke_port }}" --params "{\"nodeId\":\"${{ inputs.smoke_node_id }}\",\"depth\":1}" --rpc-timeout "${{ inputs.rpc_timeout }}" --rpc-retries "${{ inputs.rpc_retries }}" --rpc-backoff "${{ inputs.rpc_backoff }}" --rpc-backoff-max "${{ inputs.rpc_backoff_max }}"
+          EOF
+
+      - name: Print prerequisites
+        run: |
+          cat <<'EOF' | tee .artifacts/figma-console-smoke/prerequisites.txt
+          This workflow assumes:
+          1. The runner is a self-hosted macOS machine.
+          2. Figma Desktop is already open on that machine.
+          3. The target file is open in Figma Desktop.
+          4. figma_console_bridge.js has already been pasted into the Desktop Console.
+          5. No secrets are printed into logs.
+          EOF
+
+      - name: Start figma-console proxy
+        run: |
+          nohup python -m airis_pdm.cli figma-console serve \
+            --host 0.0.0.0 \
+            --port "${{ inputs.smoke_port }}" \
+            > .artifacts/figma-console-smoke/proxy.log 2>&1 &
+          echo $! > .artifacts/figma-console-smoke/proxy.pid
+          sleep 2
+
+      - name: Run searchNodes smoke
+        run: |
+          set -o pipefail
+          python -m airis_pdm.cli figma-console request searchNodes \
+            --host "${{ inputs.smoke_host }}" \
+            --port "${{ inputs.smoke_port }}" \
+            --params "{\"pattern\":\"${{ inputs.search_pattern }}\"}" \
+            --rpc-timeout "${{ inputs.rpc_timeout }}" \
+            --rpc-retries "${{ inputs.rpc_retries }}" \
+            --rpc-backoff "${{ inputs.rpc_backoff }}" \
+            --rpc-backoff-max "${{ inputs.rpc_backoff_max }}" \
+            > .artifacts/figma-console-smoke/searchNodes.json
+
+      - name: Run getNode smoke
+        run: |
+          set -o pipefail
+          python -m airis_pdm.cli figma-console request getNode \
+            --host "${{ inputs.smoke_host }}" \
+            --port "${{ inputs.smoke_port }}" \
+            --params "{\"nodeId\":\"${{ inputs.smoke_node_id }}\",\"depth\":1}" \
+            --rpc-timeout "${{ inputs.rpc_timeout }}" \
+            --rpc-retries "${{ inputs.rpc_retries }}" \
+            --rpc-backoff "${{ inputs.rpc_backoff }}" \
+            --rpc-backoff-max "${{ inputs.rpc_backoff_max }}" \
+            > .artifacts/figma-console-smoke/getNode.json
+
+      - name: Stop figma-console proxy
+        if: always()
+        run: |
+          if [ -f .artifacts/figma-console-smoke/proxy.pid ]; then
+            kill "$(cat .artifacts/figma-console-smoke/proxy.pid)" || true
+          fi
+
+      - name: Upload smoke artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: figma-console-smoke-logs
+          path: .artifacts/figma-console-smoke/
+          retention-days: 7

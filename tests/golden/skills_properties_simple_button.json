@@ -1,0 +1,16 @@
+{
+  "spec": {
+    "properties": {
+      "variantAxes": [
+        {
+          "name": "Size",
+          "values": [
+            "md"
+          ]
+        }
+      ],
+      "booleanToggles": []
+    }
+  },
+  "markdown": "# Button,Size=md — Properties\n\n- 軸數: 1\n"
+}

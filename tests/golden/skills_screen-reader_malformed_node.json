@@ -1,0 +1,34 @@
+{
+  "spec": {
+    "screenReader": {
+      "platforms": {
+        "voiceover": {
+          "role": "UIView",
+          "label": "ErrorNode",
+          "traits": [],
+          "actions": [
+            "activate"
+          ]
+        },
+        "talkback": {
+          "role": "android.view.View",
+          "label": "ErrorNode",
+          "traits": [],
+          "actions": [
+            "click"
+          ]
+        },
+        "aria": {
+          "role": "generic",
+          "label": "ErrorNode",
+          "traits": [],
+          "actions": [
+            "click",
+            "keypress"
+          ]
+        }
+      }
+    }
+  },
+  "markdown": "# ErrorNode — Screen Reader\n\n- Label: ErrorNode\n"
+}

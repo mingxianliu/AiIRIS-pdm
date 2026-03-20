@@ -1,0 +1,34 @@
+{
+  "spec": {
+    "screenReader": {
+      "platforms": {
+        "voiceover": {
+          "role": "UIView",
+          "label": "",
+          "traits": [],
+          "actions": [
+            "activate"
+          ]
+        },
+        "talkback": {
+          "role": "android.view.View",
+          "label": "",
+          "traits": [],
+          "actions": [
+            "click"
+          ]
+        },
+        "aria": {
+          "role": "generic",
+          "label": "",
+          "traits": [],
+          "actions": [
+            "click",
+            "keypress"
+          ]
+        }
+      }
+    }
+  },
+  "markdown": "#  — Screen Reader\n\n- Label: \n"
+}

@@ -1,0 +1,28 @@
+{
+  "spec": {
+    "api": {
+      "properties": [
+        {
+          "name": "Primary",
+          "type": "boolean",
+          "defaultValue": "True",
+          "values": [
+            "true",
+            "false"
+          ],
+          "description": "Primary property",
+          "isRequired": false
+        },
+        {
+          "name": "Size",
+          "type": "string",
+          "defaultValue": "md",
+          "values": [],
+          "description": "Size property",
+          "isRequired": true
+        }
+      ]
+    }
+  },
+  "markdown": "# Button,Size=md — API Spec\n\n- 屬性數: 2\n"
+}

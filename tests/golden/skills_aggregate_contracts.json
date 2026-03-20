@@ -1,0 +1,261 @@
+{
+  "react": {
+    "normal": {
+      "spec": {
+        "react": {
+          "files": [
+            "src/components/Button.tsx",
+            "src/components/Button.css"
+          ]
+        }
+      },
+      "markdown": "# Button,Size=md,State=default — React Component\nGenerated files: src/components/Button.tsx, src/components/Button.css\n"
+    },
+    "edge": {
+      "spec": {
+        "react": {
+          "files": []
+        }
+      },
+      "markdown": "# Badge — React Component\nGenerated files: \n"
+    }
+  },
+  "vue": {
+    "normal": {
+      "spec": {
+        "vue": {
+          "files": [
+            "src/components/Button.vue",
+            "src/components/Button.css"
+          ]
+        }
+      },
+      "markdown": "# Button,Size=md,State=default — Vue Component\nGenerated files: src/components/Button.vue, src/components/Button.css\n"
+    },
+    "edge": {
+      "spec": {
+        "vue": {
+          "files": []
+        }
+      },
+      "markdown": "# Badge — Vue Component\nGenerated files: \n"
+    }
+  },
+  "all-in-one": {
+    "normal": {
+      "spec": {
+        "meta": {
+          "name": "Button,Size=md,State=default"
+        },
+        "anatomy": {
+          "layers": [
+            {
+              "index": 1,
+              "name": "Label",
+              "type": "TEXT",
+              "x": 10,
+              "y": 10,
+              "isOptional": false,
+              "description": "文字圖層"
+            }
+          ]
+        },
+        "api": {
+          "properties": [
+            {
+              "name": "disabled",
+              "type": "boolean",
+              "defaultValue": "False",
+              "values": [
+                "true",
+                "false"
+              ],
+              "description": "disabled property",
+              "isRequired": false
+            },
+            {
+              "name": "variant",
+              "type": "string",
+              "defaultValue": "primary",
+              "values": [],
+              "description": "variant property",
+              "isRequired": true
+            }
+          ]
+        },
+        "colorAnnotation": {
+          "elements": [
+            {
+              "layerName": "Button,Size=md,State=default",
+              "property": "backgroundColor",
+              "states": [
+                {
+                  "state": "default",
+                  "tokenName": "(no token)",
+                  "resolvedValue": "#3366ff"
+                }
+              ]
+            }
+          ]
+        },
+        "properties": {
+          "variantAxes": [
+            {
+              "name": "Size",
+              "values": [
+                "md"
+              ]
+            },
+            {
+              "name": "State",
+              "values": [
+                "default"
+              ]
+            }
+          ],
+          "booleanToggles": []
+        },
+        "structure": {
+          "variants": [
+            {
+              "size": "default",
+              "density": "default",
+              "height": 40,
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              },
+              "spacing": 12,
+              "borderRadius": 8
+            }
+          ]
+        },
+        "screenReader": {
+          "platforms": {
+            "voiceover": {
+              "role": "UIView",
+              "label": "Submit",
+              "traits": [],
+              "actions": [
+                "activate"
+              ]
+            },
+            "talkback": {
+              "role": "android.view.View",
+              "label": "Submit",
+              "traits": [],
+              "actions": [
+                "click"
+              ]
+            },
+            "aria": {
+              "role": "generic",
+              "label": "Submit",
+              "traits": [],
+              "actions": [
+                "click",
+                "keypress"
+              ]
+            }
+          }
+        }
+      },
+      "markdowns": {
+        "anatomy": "# Button,Size=md,State=default — Anatomy\n\n- 圖層數: 1\n",
+        "api-spec": "# Button,Size=md,State=default — API Spec\n\n- 屬性數: 2\n",
+        "color-annotation": "# Button,Size=md,State=default — Color Annotation\n\n- 色彩元素: 1\n",
+        "properties": "# Button,Size=md,State=default — Properties\n\n- 軸數: 2\n",
+        "structure": "# Button,Size=md,State=default — Structure\n\n- 高度: 40\n",
+        "screen-reader": "# Button,Size=md,State=default — Screen Reader\n\n- Label: Submit\n"
+      },
+      "errors": {}
+    },
+    "edge": {
+      "spec": {
+        "meta": {
+          "name": "Badge"
+        },
+        "anatomy": {
+          "layers": [
+            {
+              "index": 1,
+              "name": "Layer1",
+              "type": "TEXT",
+              "x": 0,
+              "y": 0,
+              "isOptional": false,
+              "description": "文字圖層"
+            }
+          ]
+        },
+        "api": {
+          "properties": []
+        },
+        "colorAnnotation": {
+          "elements": []
+        },
+        "properties": {
+          "variantAxes": [],
+          "booleanToggles": []
+        },
+        "structure": {
+          "variants": [
+            {
+              "size": "default",
+              "density": "default",
+              "height": 0,
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              },
+              "spacing": 0,
+              "borderRadius": null
+            }
+          ]
+        },
+        "screenReader": {
+          "platforms": {
+            "voiceover": {
+              "role": "UIView",
+              "label": "Badge",
+              "traits": [],
+              "actions": [
+                "activate"
+              ]
+            },
+            "talkback": {
+              "role": "android.view.View",
+              "label": "Badge",
+              "traits": [],
+              "actions": [
+                "click"
+              ]
+            },
+            "aria": {
+              "role": "generic",
+              "label": "Badge",
+              "traits": [],
+              "actions": [
+                "click",
+                "keypress"
+              ]
+            }
+          }
+        }
+      },
+      "markdowns": {
+        "anatomy": "# Badge — Anatomy\n\n- 圖層數: 1\n",
+        "api-spec": "# Badge — API Spec\n\n- 屬性數: 0\n",
+        "color-annotation": "# Badge — Color Annotation\n\n- 色彩元素: 0\n",
+        "properties": "# Badge — Properties\n\n- 軸數: 0\n",
+        "structure": "# Badge — Structure\n\n- 高度: 0\n",
+        "screen-reader": "# Badge — Screen Reader\n\n- Label: Badge\n"
+      },
+      "errors": {}
+    }
+  }
+}

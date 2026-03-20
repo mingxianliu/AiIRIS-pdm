@@ -1,0 +1,100 @@
+{
+  "count": 5,
+  "counts": {
+    "collisions": 3,
+    "filtered": 5,
+    "generated": 5,
+    "matched": 5
+  },
+  "exclude": [],
+  "fidelity": "semantic",
+  "framework": "vue",
+  "generated": [
+    {
+      "collisions": 0,
+      "displayName": "Dashboard",
+      "nodeId": "1:1",
+      "nodeName": "[Page] Dashboard",
+      "routePath": "/dashboard",
+      "slug": "dashboard"
+    },
+    {
+      "collisions": 1,
+      "displayName": "Dashboard",
+      "nodeId": "1:2",
+      "nodeName": "[Page] Dashboard",
+      "routePath": "/dashboard-2",
+      "slug": "dashboard-2"
+    },
+    {
+      "collisions": 2,
+      "displayName": "Dashboard",
+      "nodeId": "1:3",
+      "nodeName": "[Page] Dashboard",
+      "routePath": "/dashboard-3",
+      "slug": "dashboard-3"
+    },
+    {
+      "collisions": 3,
+      "displayName": "Dashboard",
+      "nodeId": "1:4",
+      "nodeName": "[Page] Dashboard",
+      "routePath": "/dashboard-4",
+      "slug": "dashboard-4"
+    },
+    {
+      "collisions": 0,
+      "displayName": "Settings",
+      "nodeId": "1:5",
+      "nodeName": "[Page] Settings",
+      "routePath": "/settings",
+      "slug": "settings"
+    }
+  ],
+  "host": "localhost",
+  "include": [],
+  "pages": [
+    {
+      "collisions": 0,
+      "displayName": "Dashboard",
+      "nodeId": "1:1",
+      "nodeName": "[Page] Dashboard",
+      "routePath": "/dashboard",
+      "slug": "dashboard"
+    },
+    {
+      "collisions": 1,
+      "displayName": "Dashboard",
+      "nodeId": "1:2",
+      "nodeName": "[Page] Dashboard",
+      "routePath": "/dashboard-2",
+      "slug": "dashboard-2"
+    },
+    {
+      "collisions": 2,
+      "displayName": "Dashboard",
+      "nodeId": "1:3",
+      "nodeName": "[Page] Dashboard",
+      "routePath": "/dashboard-3",
+      "slug": "dashboard-3"
+    },
+    {
+      "collisions": 3,
+      "displayName": "Dashboard",
+      "nodeId": "1:4",
+      "nodeName": "[Page] Dashboard",
+      "routePath": "/dashboard-4",
+      "slug": "dashboard-4"
+    },
+    {
+      "collisions": 0,
+      "displayName": "Settings",
+      "nodeId": "1:5",
+      "nodeName": "[Page] Settings",
+      "routePath": "/settings",
+      "slug": "settings"
+    }
+  ],
+  "pattern": "[Page]",
+  "port": 3055
+}

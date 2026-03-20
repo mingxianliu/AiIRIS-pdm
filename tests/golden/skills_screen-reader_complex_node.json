@@ -1,0 +1,34 @@
+{
+  "spec": {
+    "screenReader": {
+      "platforms": {
+        "voiceover": {
+          "role": "UIView",
+          "label": "Hello World",
+          "traits": [],
+          "actions": [
+            "activate"
+          ]
+        },
+        "talkback": {
+          "role": "android.view.View",
+          "label": "Hello World",
+          "traits": [],
+          "actions": [
+            "click"
+          ]
+        },
+        "aria": {
+          "role": "generic",
+          "label": "Hello World",
+          "traits": [],
+          "actions": [
+            "click",
+            "keypress"
+          ]
+        }
+      }
+    }
+  },
+  "markdown": "# Card,Status=active — Screen Reader\n\n- Label: Hello World\n"
+}

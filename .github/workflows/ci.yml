@@ -43,7 +43,11 @@ jobs:
         run: |
           python -m pytest tests/ -v --tb=short
 
-  # ── Figma Plugin TypeScript 型別檢查 ──────────────────────────────
+      - name: Baseline parity check
+        run: |
+          python scripts/diff_against_baseline.py
+
+  # ── Figma Plugin TypeScript 型別檢查（獨立於 FigmAI Python 管線） ───────────
   plugin-typecheck:
     name: Figma Plugin TypeScript
     runs-on: ubuntu-latest

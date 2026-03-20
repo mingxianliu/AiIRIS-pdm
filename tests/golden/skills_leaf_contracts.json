@@ -1,0 +1,257 @@
+{
+  "anatomy": {
+    "normal": {
+      "spec": {
+        "anatomy": {
+          "layers": [
+            {
+              "index": 1,
+              "name": "Label",
+              "type": "TEXT",
+              "x": 10,
+              "y": 10,
+              "isOptional": false,
+              "description": "文字圖層"
+            }
+          ]
+        }
+      },
+      "markdown": "# Button,Size=md,State=default — Anatomy\n\n- 圖層數: 1\n"
+    },
+    "edge": {
+      "spec": {
+        "anatomy": {
+          "layers": [
+            {
+              "index": 1,
+              "name": "Layer1",
+              "type": "TEXT",
+              "x": 0,
+              "y": 0,
+              "isOptional": false,
+              "description": "文字圖層"
+            }
+          ]
+        }
+      },
+      "markdown": "# Badge — Anatomy\n\n- 圖層數: 1\n"
+    }
+  },
+  "api-spec": {
+    "normal": {
+      "spec": {
+        "api": {
+          "properties": [
+            {
+              "name": "disabled",
+              "type": "boolean",
+              "defaultValue": "False",
+              "values": [
+                "true",
+                "false"
+              ],
+              "description": "disabled property",
+              "isRequired": false
+            },
+            {
+              "name": "variant",
+              "type": "string",
+              "defaultValue": "primary",
+              "values": [],
+              "description": "variant property",
+              "isRequired": true
+            }
+          ]
+        }
+      },
+      "markdown": "# Button,Size=md,State=default — API Spec\n\n- 屬性數: 2\n"
+    },
+    "edge": {
+      "spec": {
+        "api": {
+          "properties": []
+        }
+      },
+      "markdown": "# Badge — API Spec\n\n- 屬性數: 0\n"
+    }
+  },
+  "color-annotation": {
+    "normal": {
+      "spec": {
+        "colorAnnotation": {
+          "elements": [
+            {
+              "layerName": "Button,Size=md,State=default",
+              "property": "backgroundColor",
+              "states": [
+                {
+                  "state": "default",
+                  "tokenName": "(no token)",
+                  "resolvedValue": "#3366ff"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "markdown": "# Button,Size=md,State=default — Color Annotation\n\n- 色彩元素: 1\n"
+    },
+    "edge": {
+      "spec": {
+        "colorAnnotation": {
+          "elements": []
+        }
+      },
+      "markdown": "# Badge — Color Annotation\n\n- 色彩元素: 0\n"
+    }
+  },
+  "properties": {
+    "normal": {
+      "spec": {
+        "properties": {
+          "variantAxes": [
+            {
+              "name": "Size",
+              "values": [
+                "md"
+              ]
+            },
+            {
+              "name": "State",
+              "values": [
+                "default"
+              ]
+            }
+          ],
+          "booleanToggles": []
+        }
+      },
+      "markdown": "# Button,Size=md,State=default — Properties\n\n- 軸數: 2\n"
+    },
+    "edge": {
+      "spec": {
+        "properties": {
+          "variantAxes": [],
+          "booleanToggles": []
+        }
+      },
+      "markdown": "# Badge — Properties\n\n- 軸數: 0\n"
+    }
+  },
+  "structure": {
+    "normal": {
+      "spec": {
+        "structure": {
+          "variants": [
+            {
+              "size": "default",
+              "density": "default",
+              "height": 40,
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              },
+              "spacing": 12,
+              "borderRadius": 8
+            }
+          ]
+        }
+      },
+      "markdown": "# Button,Size=md,State=default — Structure\n\n- 高度: 40\n"
+    },
+    "edge": {
+      "spec": {
+        "structure": {
+          "variants": [
+            {
+              "size": "default",
+              "density": "default",
+              "height": 0,
+              "padding": {
+                "top": 0,
+                "right": 0,
+                "bottom": 0,
+                "left": 0
+              },
+              "spacing": 0,
+              "borderRadius": null
+            }
+          ]
+        }
+      },
+      "markdown": "# Badge — Structure\n\n- 高度: 0\n"
+    }
+  },
+  "screen-reader": {
+    "normal": {
+      "spec": {
+        "screenReader": {
+          "platforms": {
+            "voiceover": {
+              "role": "UIView",
+              "label": "Submit",
+              "traits": [],
+              "actions": [
+                "activate"
+              ]
+            },
+            "talkback": {
+              "role": "android.view.View",
+              "label": "Submit",
+              "traits": [],
+              "actions": [
+                "click"
+              ]
+            },
+            "aria": {
+              "role": "generic",
+              "label": "Submit",
+              "traits": [],
+              "actions": [
+                "click",
+                "keypress"
+              ]
+            }
+          }
+        }
+      },
+      "markdown": "# Button,Size=md,State=default — Screen Reader\n\n- Label: Submit\n"
+    },
+    "edge": {
+      "spec": {
+        "screenReader": {
+          "platforms": {
+            "voiceover": {
+              "role": "UIView",
+              "label": "Badge",
+              "traits": [],
+              "actions": [
+                "activate"
+              ]
+            },
+            "talkback": {
+              "role": "android.view.View",
+              "label": "Badge",
+              "traits": [],
+              "actions": [
+                "click"
+              ]
+            },
+            "aria": {
+              "role": "generic",
+              "label": "Badge",
+              "traits": [],
+              "actions": [
+                "click",
+                "keypress"
+              ]
+            }
+          }
+        }
+      },
+      "markdown": "# Badge — Screen Reader\n\n- Label: Badge\n"
+    }
+  }
+}

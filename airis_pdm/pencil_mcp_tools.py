@@ -26,9 +26,251 @@ class PencilMcpTools:
     Focus on PencilAI: 提供 .pen 與代碼生成之間的橋樑。
     """
 
-    def __init__(self, output_dir: str = "./generated"):
-        self._converter = PencilToIR()
+    def __init__(self, output_dir: str = "./generated", page_name: str = "Page"):
+        self._converter = PencilToIR(page_name=page_name)
         self._output_dir = output_dir
+        self._page_name = page_name
+
+    # ── 核心 API（與 test_pencil_mcp_tools 對齊） ──
+
+    def get_pen_ir(self, pen_data: Any) -> str:
+        """將 Pencil 節點資料轉為 IR v2.0 文件。"""
+        try:
+            ir_doc = self._converter.convert(pen_data)
+            return _ok(ir_doc)
+        except Exception as e:
+            return _err(f"IR 轉換失敗: {e}")
+
+    def generate_code(self, pen_data: Any, target: str = "vue", output_dir: Optional[str] = None) -> str:
+        """從 Pencil 節點資料生成前端代碼（簡化介面）。"""
+        out = output_dir or self._output_dir
+        try:
+            ir_doc = self._converter.convert(pen_data if isinstance(pen_data, (list, dict)) else [pen_data])
+            result = generate_from_ir(
+                ir_data=ir_doc["tree"],
+                target=target,
+                output_dir=out,
+            )
+            return _ok(result)
+        except Exception as e:
+            return _err(f"生成代碼失敗: {e}")
+
+    def get_design_tokens(self, pen_data: Any) -> str:
+        """從 Pencil 節點萃取 design tokens（顏色、字級、字族）。"""
+        try:
+            ir_doc = self._converter.convert(pen_data if isinstance(pen_data, (list, dict)) else [pen_data])
+            tree = ir_doc["tree"]
+            colors: list[str] = []
+            font_sizes: list[int] = []
+            font_families: list[str] = []
+
+            def _walk(node: dict) -> None:
+                styles = node.get("styles") or {}
+                bg = styles.get("backgroundColor")
+                if isinstance(bg, str) and bg:
+                    colors.append(bg)
+                color = styles.get("color")
+                if isinstance(color, str) and color:
+                    colors.append(color)
+                fills = node.get("fills") or []
+                for f in fills:
+                    c = f.get("color")
+                    if isinstance(c, dict):
+                        r, g, b = int(c.get("r", 0) * 255), int(c.get("g", 0) * 255), int(c.get("b", 0) * 255)
+                        colors.append(f"rgb({r}, {g}, {b})")
+                txt = node.get("text") or {}
+                fs = txt.get("fontSize")
+                if isinstance(fs, (int, float)) and fs > 0:
+                    font_sizes.append(int(fs))
+                ff = txt.get("fontFamily")
+                if isinstance(ff, str) and ff:
+                    font_families.append(ff)
+                for child in node.get("children") or []:
+                    _walk(child)
+
+            _walk(tree)
+            return _ok({
+                "colors": sorted(set(colors)),
+                "fontSizes": sorted(set(font_sizes)),
+                "fontFamilies": sorted(set(font_families)),
+            })
+        except Exception as e:
+            return _err(f"萃取 design tokens 失敗: {e}")
+
+    def get_completeness(self, pen_data: Any) -> str:
+        """評估設計稿完整度（節點數、有無樣式、有無文字）。"""
+        try:
+            ir_doc = self._converter.convert(pen_data if isinstance(pen_data, (list, dict)) else [pen_data])
+            tree = ir_doc["tree"]
+            node_count = ir_doc["stats"]["nodeCount"]
+            has_styles = False
+            has_text = False
+
+            def _walk(node: dict) -> None:
+                nonlocal has_styles, has_text
+                if node.get("styles"):
+                    has_styles = True
+                if node.get("text", {}).get("characters"):
+                    has_text = True
+                fills = node.get("fills")
+                if fills:
+                    has_styles = True
+                for child in node.get("children") or []:
+                    _walk(child)
+
+            _walk(tree)
+            score = 0
+            if node_count > 0:
+                score += 25
+            if node_count > 5:
+                score += 25
+            if has_styles:
+                score += 25
+            if has_text:
+                score += 25
+            return _ok({
+                "nodeCount": node_count,
+                "score": score,
+                "hasStyles": has_styles,
+                "hasText": has_text,
+            })
+        except Exception as e:
+            return _err(f"完整度評估失敗: {e}")
+
+    def spec_to_design_ops(self, spec: dict) -> str:
+        """將 component spec 轉為 Pencil batch_design 操作列表。"""
+        try:
+            ops: list[str] = []
+            name = spec.get("name") or "Component"
+            theme = spec.get("theme") or {}
+            width = spec.get("width") or 360
+            height = spec.get("height") or 780
+            bg = theme.get("bg") or "#FFFFFF"
+            primary = theme.get("primary") or "#0092B8"
+            text_dark = theme.get("textDark") or "#1D293D"
+            text_light = theme.get("textLight") or "#FFFFFF"
+
+            ops.append(
+                f'root=I("canvas", {{"type":"frame","name":"{name}",'
+                f'"width":{width},"height":{height},"fill":"{bg}",'
+                f'"layout":"vertical","gap":0,"padding":0}})'
+            )
+
+            sections = spec.get("sections") or []
+            for idx, sec in enumerate(sections):
+                sec_type = (sec.get("type") or "frame").lower()
+                if sec_type == "header":
+                    title = sec.get("title") or "Header"
+                    h = sec.get("height") or 56
+                    ops.append(
+                        f'sec{idx}=I(root, {{"type":"frame","name":"Header",'
+                        f'"width":{width},"height":{h},"fill":"{primary}",'
+                        f'"layout":"horizontal","gap":8,"padding":16}})'
+                    )
+                    ops.append(
+                        f'I(sec{idx}, {{"type":"text","name":"HeaderTitle",'
+                        f'"content":"{title}","fontSize":18,"fontWeight":600,"color":"{text_light}"}})'
+                    )
+                elif sec_type == "content":
+                    ops.append(
+                        f'sec{idx}=I(root, {{"type":"frame","name":"Content",'
+                        f'"width":{width},"layout":"vertical","gap":16,"padding":16}})'
+                    )
+                elif sec_type == "grid":
+                    cols = sec.get("columns") or 2
+                    items = sec.get("items") or []
+                    ops.append(
+                        f'sec{idx}=I(root, {{"type":"frame","name":"Grid",'
+                        f'"width":{width},"layout":"horizontal","gap":12,"padding":16}})'
+                    )
+                    for j, item in enumerate(items):
+                        label = item.get("label") or f"Item{j}"
+                        icon = item.get("icon")
+                        cell_w = (width - 32 - 12 * (cols - 1)) // cols
+                        ops.append(
+                            f'cell{idx}_{j}=I(sec{idx}, {{"type":"frame","name":"GridCell-{label}",'
+                            f'"width":{cell_w},"layout":"vertical","gap":8,"padding":12,"fill":"#F1F5F9"}})'
+                        )
+                        if icon:
+                            ops.append(
+                                f'I(cell{idx}_{j}, {{"type":"icon_font","name":"Icon-{label}",'
+                                f'"content":"{icon}","fontSize":24,"color":"{primary}"}})'
+                            )
+                        ops.append(
+                            f'I(cell{idx}_{j}, {{"type":"text","name":"Label-{label}",'
+                            f'"content":"{label}","fontSize":14,"color":"{text_dark}"}})'
+                        )
+                elif sec_type == "card":
+                    title = sec.get("title") or "Card"
+                    content = sec.get("content") or ""
+                    ops.append(
+                        f'sec{idx}=I(root, {{"type":"frame","name":"Card-{title}",'
+                        f'"width":{width - 32},"layout":"vertical","gap":8,"padding":16,"fill":"#FFFFFF"}})'
+                    )
+                    ops.append(
+                        f'I(sec{idx}, {{"type":"text","name":"CardTitle-{title}",'
+                        f'"content":"{title}","fontSize":16,"fontWeight":600,"color":"{text_dark}"}})'
+                    )
+                    if content:
+                        ops.append(
+                            f'I(sec{idx}, {{"type":"text","name":"CardContent-{title}",'
+                            f'"content":"{content}","fontSize":14,"color":"{text_dark}"}})'
+                        )
+                elif sec_type == "list":
+                    title = sec.get("title") or "List"
+                    items = sec.get("items") or []
+                    ops.append(
+                        f'sec{idx}=I(root, {{"type":"frame","name":"List-{title}",'
+                        f'"width":{width},"layout":"vertical","gap":0,"padding":16}})'
+                    )
+                    for j, item in enumerate(items):
+                        item_title = item.get("title") or f"Item{j}"
+                        subtitle = item.get("subtitle") or ""
+                        ops.append(
+                            f'row{idx}_{j}=I(sec{idx}, {{"type":"frame","name":"Row-{item_title}",'
+                            f'"width":{width - 32},"layout":"vertical","gap":2,"padding":12}})'
+                        )
+                        ops.append(
+                            f'I(row{idx}_{j}, {{"type":"text","name":"RowTitle-{item_title}",'
+                            f'"content":"{item_title}","fontSize":16,"color":"{text_dark}"}})'
+                        )
+                        if subtitle:
+                            ops.append(
+                                f'I(row{idx}_{j}, {{"type":"text","name":"RowSub-{item_title}",'
+                                f'"content":"{subtitle}","fontSize":12,"color":"#94A3B8"}})'
+                            )
+                elif sec_type == "navbar":
+                    items = sec.get("items") or []
+                    ops.append(
+                        f'sec{idx}=I(root, {{"type":"frame","name":"NavBar",'
+                        f'"width":{width},"height":56,"layout":"horizontal","gap":0,"padding":0,"fill":"#FFFFFF"}})'
+                    )
+                    tab_w = width // max(len(items), 1)
+                    for j, item in enumerate(items):
+                        label = item.get("label") or f"Tab{j}"
+                        icon = item.get("icon")
+                        ops.append(
+                            f'tab{idx}_{j}=I(sec{idx}, {{"type":"frame","name":"Tab-{label}",'
+                            f'"width":{tab_w},"layout":"vertical","gap":4,"padding":8}})'
+                        )
+                        if icon:
+                            ops.append(
+                                f'I(tab{idx}_{j}, {{"type":"icon_font","name":"TabIcon-{label}",'
+                                f'"content":"{icon}","fontSize":20,"color":"{primary}"}})'
+                            )
+                        ops.append(
+                            f'I(tab{idx}_{j}, {{"type":"text","name":"TabLabel-{label}",'
+                            f'"content":"{label}","fontSize":10,"color":"{text_dark}"}})'
+                        )
+
+            return _ok({
+                "operations": ops,
+                "description": f"從 spec「{name}」產生 {len(ops)} 個 batch_design 操作",
+            })
+        except Exception as e:
+            return _err(f"spec_to_design_ops 失敗: {e}")
+
+    # ── 進階 API ──
 
     def generate_code_from_pen(
         self,

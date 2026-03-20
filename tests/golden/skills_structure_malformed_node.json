@@ -1,0 +1,22 @@
+{
+  "spec": {
+    "structure": {
+      "variants": [
+        {
+          "size": "default",
+          "density": "default",
+          "height": 0,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "spacing": 0,
+          "borderRadius": null
+        }
+      ]
+    }
+  },
+  "markdown": "# ErrorNode — Structure\n\n- 高度: 0\n"
+}

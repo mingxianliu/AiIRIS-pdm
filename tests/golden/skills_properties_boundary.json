@@ -1,0 +1,34 @@
+{
+  "spec": {
+    "properties": {
+      "variantAxes": [
+        {
+          "name": "Size",
+          "values": [
+            "Large"
+          ]
+        },
+        {
+          "name": "Theme",
+          "values": [
+            "Dark"
+          ]
+        },
+        {
+          "name": "noise",
+          "values": [
+            "true"
+          ]
+        },
+        {
+          "name": "state",
+          "values": [
+            "hover"
+          ]
+        }
+      ],
+      "booleanToggles": []
+    }
+  },
+  "markdown": "# Button, Size=Large, Theme=Dark, state=hover, noise=true, extra — Properties\n\n- 軸數: 4\n"
+}

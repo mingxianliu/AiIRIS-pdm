@@ -1,0 +1,42 @@
+{
+  "spec": {
+    "colorAnnotation": {
+      "elements": [
+        {
+          "layerName": "ColorMix",
+          "property": "backgroundColor",
+          "states": [
+            {
+              "state": "default",
+              "tokenName": "(no token)",
+              "resolvedValue": "#ff0000"
+            }
+          ]
+        },
+        {
+          "layerName": "Sub1",
+          "property": "backgroundColor",
+          "states": [
+            {
+              "state": "default",
+              "tokenName": "(no token)",
+              "resolvedValue": "#00ff00"
+            }
+          ]
+        },
+        {
+          "layerName": "Sub2",
+          "property": "backgroundColor",
+          "states": [
+            {
+              "state": "default",
+              "tokenName": "(no token)",
+              "resolvedValue": "#0000ff"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "markdown": "# ColorMix — Color Annotation\n\n- 色彩元素: 3\n"
+}

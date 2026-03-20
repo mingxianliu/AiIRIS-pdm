@@ -1,0 +1,53 @@
+{
+  "name": "AuthLogin",
+  "id": "auth-login-root",
+  "sections": [
+    {
+      "id": "auth-login-form",
+      "type": "form",
+      "name": "LoginForm",
+      "props": {
+        "layout": "vertical",
+        "gap": 12,
+        "padding": 16
+      },
+      "children": [
+        {
+          "id": "auth-login-title",
+          "type": "text",
+          "name": "Title",
+          "props": {
+            "text": "Welcome Back",
+            "fontSize": 24,
+            "fontWeight": 700,
+            "color": "rgb(20, 20, 20)"
+          }
+        },
+        {
+          "id": "auth-login-email",
+          "type": "input",
+          "name": "EmailInput",
+          "props": {
+            "placeholder": "Email"
+          }
+        },
+        {
+          "id": "auth-login-password",
+          "type": "input",
+          "name": "PasswordInput",
+          "props": {
+            "placeholder": "Password"
+          }
+        },
+        {
+          "id": "auth-login-submit",
+          "type": "button",
+          "name": "SubmitButton",
+          "props": {
+            "label": "Sign In"
+          }
+        }
+      ]
+    }
+  ]
+}

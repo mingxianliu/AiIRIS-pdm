@@ -1,0 +1,50 @@
+{
+  "count": 2,
+  "counts": {
+    "collisions": 0,
+    "filtered": 2,
+    "generated": 2,
+    "matched": 2
+  },
+  "exclude": [],
+  "fidelity": "semantic",
+  "framework": "both",
+  "generated": [
+    {
+      "collisions": 0,
+      "displayName": "Login",
+      "nodeId": "1:1",
+      "nodeName": "[Page] Login",
+      "routePath": "/login",
+      "slug": "login"
+    },
+    {
+      "collisions": 0,
+      "displayName": "Register",
+      "nodeId": "1:2",
+      "nodeName": "[Page] Register",
+      "routePath": "/register",
+      "slug": "register"
+    }
+  ],
+  "include": [],
+  "pages": [
+    {
+      "collisions": 0,
+      "displayName": "Login",
+      "nodeId": "1:1",
+      "nodeName": "[Page] Login",
+      "routePath": "/login",
+      "slug": "login"
+    },
+    {
+      "collisions": 0,
+      "displayName": "Register",
+      "nodeId": "1:2",
+      "nodeName": "[Page] Register",
+      "routePath": "/register",
+      "slug": "register"
+    }
+  ],
+  "pattern": "[Page]"
+}

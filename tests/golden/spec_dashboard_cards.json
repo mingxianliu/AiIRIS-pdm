@@ -1,0 +1,80 @@
+{
+  "name": "DashboardCards",
+  "id": "dashboard-root",
+  "sections": [
+    {
+      "id": "dashboard-header",
+      "type": "frame",
+      "name": "Header",
+      "children": [
+        {
+          "id": "dashboard-title",
+          "type": "text",
+          "name": "PageTitle",
+          "props": {
+            "text": "Analytics Overview",
+            "fontSize": 28,
+            "fontWeight": 700
+          }
+        }
+      ]
+    },
+    {
+      "id": "dashboard-cards",
+      "type": "frame",
+      "name": "StatsGrid",
+      "props": {
+        "layout": "horizontal",
+        "gap": 16
+      },
+      "children": [
+        {
+          "id": "dashboard-card-1",
+          "type": "card",
+          "name": "RevenueCard",
+          "children": [
+            {
+              "id": "dashboard-card-1-label",
+              "type": "text",
+              "name": "RevenueLabel",
+              "props": {
+                "text": "Revenue"
+              }
+            },
+            {
+              "id": "dashboard-card-1-value",
+              "type": "text",
+              "name": "RevenueValue",
+              "props": {
+                "text": "$128,000"
+              }
+            }
+          ]
+        },
+        {
+          "id": "dashboard-card-2",
+          "type": "card",
+          "name": "ConversionCard",
+          "children": [
+            {
+              "id": "dashboard-card-2-label",
+              "type": "text",
+              "name": "ConversionLabel",
+              "props": {
+                "text": "Conversion"
+              }
+            },
+            {
+              "id": "dashboard-card-2-value",
+              "type": "text",
+              "name": "ConversionValue",
+              "props": {
+                "text": "4.8%"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

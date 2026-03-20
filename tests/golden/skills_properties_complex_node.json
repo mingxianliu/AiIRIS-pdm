@@ -1,0 +1,16 @@
+{
+  "spec": {
+    "properties": {
+      "variantAxes": [
+        {
+          "name": "Status",
+          "values": [
+            "active"
+          ]
+        }
+      ],
+      "booleanToggles": []
+    }
+  },
+  "markdown": "# Card,Status=active — Properties\n\n- 軸數: 1\n"
+}

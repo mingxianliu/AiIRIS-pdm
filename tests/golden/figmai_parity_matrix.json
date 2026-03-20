@@ -1,0 +1,43 @@
+{
+  "flow_live_slug_collision": {
+    "counts": {
+      "matched": 4,
+      "filtered": 3,
+      "generated": 3,
+      "collisions": 2
+    },
+    "pages": [
+      {
+        "nodeName": "[Page] Login",
+        "slug": "login",
+        "routePath": "/login",
+        "displayName": "Login",
+        "collisions": 0
+      },
+      {
+        "nodeName": "[Page] Login",
+        "slug": "login-2",
+        "routePath": "/login-2",
+        "displayName": "Login",
+        "collisions": 1
+      },
+      {
+        "nodeName": "[Page] Login",
+        "slug": "login-3",
+        "routePath": "/login-3",
+        "displayName": "Login",
+        "collisions": 2
+      }
+    ]
+  },
+  "ir_contract_autofix": {
+    "root_type": "frame",
+    "root_source_type": "FRAME",
+    "child_text_characters": "123"
+  },
+  "chain_local_summary": {
+    "success": true,
+    "must_have_stage": "codegen",
+    "contains_text": "Golden Login"
+  }
+}

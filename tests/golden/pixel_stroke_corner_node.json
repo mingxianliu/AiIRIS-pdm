@@ -1,0 +1,26 @@
+{
+  "id": "sc:1",
+  "name": "StrokeCorner",
+  "type": "FRAME",
+  "visible": true,
+  "opacity": 0.95,
+  "absoluteBoundingBox": { "x": 0, "y": 0, "width": 120, "height": 88 },
+  "cornerRadius": 12,
+  "fills": [
+    {
+      "type": "SOLID",
+      "opacity": 0.9,
+      "color": { "r": 0.95, "g": 0.95, "b": 0.98, "a": 1 }
+    }
+  ],
+  "strokes": [
+    {
+      "type": "SOLID",
+      "visible": true,
+      "color": { "r": 0.2, "g": 0.5, "b": 0.9, "a": 1 }
+    }
+  ],
+  "strokeWeight": 2,
+  "strokeAlign": "INSIDE",
+  "children": []
+}

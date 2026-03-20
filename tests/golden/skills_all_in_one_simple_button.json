@@ -1,0 +1,125 @@
+{
+  "spec": {
+    "meta": {
+      "name": "Button,Size=md"
+    },
+    "anatomy": {
+      "layers": [
+        {
+          "index": 1,
+          "name": "Label",
+          "type": "TEXT",
+          "x": 10,
+          "y": 10,
+          "isOptional": false,
+          "description": "文字圖層"
+        }
+      ]
+    },
+    "api": {
+      "properties": [
+        {
+          "name": "Primary",
+          "type": "boolean",
+          "defaultValue": "True",
+          "values": [
+            "true",
+            "false"
+          ],
+          "description": "Primary property",
+          "isRequired": false
+        },
+        {
+          "name": "Size",
+          "type": "string",
+          "defaultValue": "md",
+          "values": [],
+          "description": "Size property",
+          "isRequired": true
+        }
+      ]
+    },
+    "colorAnnotation": {
+      "elements": [
+        {
+          "layerName": "Button,Size=md",
+          "property": "backgroundColor",
+          "states": [
+            {
+              "state": "default",
+              "tokenName": "(no token)",
+              "resolvedValue": "#3366ff"
+            }
+          ]
+        }
+      ]
+    },
+    "properties": {
+      "variantAxes": [
+        {
+          "name": "Size",
+          "values": [
+            "md"
+          ]
+        }
+      ],
+      "booleanToggles": []
+    },
+    "structure": {
+      "variants": [
+        {
+          "size": "default",
+          "density": "default",
+          "height": 40,
+          "padding": {
+            "top": 0,
+            "right": 0,
+            "bottom": 0,
+            "left": 0
+          },
+          "spacing": 8,
+          "borderRadius": 8
+        }
+      ]
+    },
+    "screenReader": {
+      "platforms": {
+        "voiceover": {
+          "role": "UIView",
+          "label": "Submit",
+          "traits": [],
+          "actions": [
+            "activate"
+          ]
+        },
+        "talkback": {
+          "role": "android.view.View",
+          "label": "Submit",
+          "traits": [],
+          "actions": [
+            "click"
+          ]
+        },
+        "aria": {
+          "role": "generic",
+          "label": "Submit",
+          "traits": [],
+          "actions": [
+            "click",
+            "keypress"
+          ]
+        }
+      }
+    }
+  },
+  "markdowns": {
+    "anatomy": "# Button,Size=md — Anatomy\n\n- 圖層數: 1\n",
+    "api-spec": "# Button,Size=md — API Spec\n\n- 屬性數: 2\n",
+    "color-annotation": "# Button,Size=md — Color Annotation\n\n- 色彩元素: 1\n",
+    "properties": "# Button,Size=md — Properties\n\n- 軸數: 1\n",
+    "structure": "# Button,Size=md — Structure\n\n- 高度: 40\n",
+    "screen-reader": "# Button,Size=md — Screen Reader\n\n- Label: Submit\n"
+  },
+  "errors": {},
+  "fullMarkdown": "# Button,Size=md — Anatomy\n\n- 圖層數: 1\n\n\n# Button,Size=md — API Spec\n\n- 屬性數: 2\n\n\n# Button,Size=md — Color Annotation\n\n- 色彩元素: 1\n\n\n# Button,Size=md — Properties\n\n- 軸數: 1\n\n\n# Button,Size=md — Structure\n\n- 高度: 40\n\n\n# Button,Size=md — Screen Reader\n\n- Label: Submit\n"
+}

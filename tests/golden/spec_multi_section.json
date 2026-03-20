@@ -1,0 +1,123 @@
+{
+  "name": "MultiSection",
+  "id": "multi-sec-root",
+  "sections": [
+    {
+      "id": "sec-hero",
+      "type": "frame",
+      "name": "HeroSection",
+      "props": {
+        "layout": "vertical",
+        "gap": 24,
+        "padding": 32
+      },
+      "children": [
+        {
+          "id": "sec-hero-title",
+          "type": "text",
+          "name": "HeroTitle",
+          "props": {
+            "text": "Welcome to AiIRIS",
+            "fontSize": 36,
+            "fontWeight": 800,
+            "color": "rgb(15, 23, 42)"
+          }
+        },
+        {
+          "id": "sec-hero-subtitle",
+          "type": "text",
+          "name": "HeroSubtitle",
+          "props": {
+            "text": "Design-to-code made simple",
+            "fontSize": 18,
+            "fontWeight": 400,
+            "color": "rgb(100, 116, 139)"
+          }
+        },
+        {
+          "id": "sec-hero-cta",
+          "type": "button",
+          "name": "GetStarted",
+          "props": {
+            "label": "Get Started",
+            "fill": "#3b82f6",
+            "color": "rgb(255, 255, 255)",
+            "cornerRadius": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "sec-features",
+      "type": "frame",
+      "name": "FeaturesGrid",
+      "props": {
+        "layout": "horizontal",
+        "gap": 16
+      },
+      "children": [
+        {
+          "id": "sec-feat-1",
+          "type": "card",
+          "name": "FeatureCard1",
+          "props": {
+            "fill": "#f8fafc",
+            "cornerRadius": 12,
+            "padding": 16
+          },
+          "children": [
+            {
+              "id": "sec-feat-1-title",
+              "type": "text",
+              "name": "Feat1Title",
+              "props": { "text": "Fast", "fontSize": 20, "fontWeight": 700 }
+            },
+            {
+              "id": "sec-feat-1-desc",
+              "type": "text",
+              "name": "Feat1Desc",
+              "props": { "text": "Lightning speed conversion" }
+            }
+          ]
+        },
+        {
+          "id": "sec-feat-2",
+          "type": "card",
+          "name": "FeatureCard2",
+          "props": {
+            "fill": "#f8fafc",
+            "cornerRadius": 12,
+            "padding": 16
+          },
+          "children": [
+            {
+              "id": "sec-feat-2-title",
+              "type": "text",
+              "name": "Feat2Title",
+              "props": { "text": "Accurate", "fontSize": 20, "fontWeight": 700 }
+            },
+            {
+              "id": "sec-feat-2-desc",
+              "type": "text",
+              "name": "Feat2Desc",
+              "props": { "text": "Pixel-perfect output" }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sec-footer",
+      "type": "frame",
+      "name": "Footer",
+      "children": [
+        {
+          "id": "sec-footer-text",
+          "type": "text",
+          "name": "Copyright",
+          "props": { "text": "2026 AiIRIS Team" }
+        }
+      ]
+    }
+  ]
+}

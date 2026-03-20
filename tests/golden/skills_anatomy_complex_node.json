@@ -1,0 +1,45 @@
+{
+  "spec": {
+    "anatomy": {
+      "layers": [
+        {
+          "index": 1,
+          "name": "Header",
+          "type": "FRAME",
+          "x": 0,
+          "y": 0,
+          "isOptional": false,
+          "description": "結構圖層"
+        },
+        {
+          "index": 2,
+          "name": "Title",
+          "type": "TEXT",
+          "x": 10,
+          "y": 10,
+          "isOptional": false,
+          "description": "文字圖層"
+        },
+        {
+          "index": 3,
+          "name": "Body",
+          "type": "FRAME",
+          "x": 0,
+          "y": 50,
+          "isOptional": false,
+          "description": "結構圖層"
+        },
+        {
+          "index": 4,
+          "name": "Icon",
+          "type": "RECTANGLE",
+          "x": 10,
+          "y": 10,
+          "isOptional": false,
+          "description": "結構圖層"
+        }
+      ]
+    }
+  },
+  "markdown": "# Card,Status=active — Anatomy\n\n- 圖層數: 4\n"
+}

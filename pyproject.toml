@@ -32,14 +32,21 @@ dev = [
     "pytest>=7",
     "pytest-asyncio>=0.21",
 ]
+figma-console = [
+    "websockets>=12",
+]
 legacy = [
     "requests>=2.28",
 ]
 
 [project.scripts]
-pdm = "airis_pdm.cli:main"
-figma-sync = "airis_pdm.cli:main"  # deprecated alias
+aipdm = "airis_pdm.cli:main"
+pdm = "airis_pdm.cli:deprecated_main"  # 舊名；請改用 aipdm（避免與 PyPA PDM 混淆）
+figma-sync = "airis_pdm.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["airis_pdm*"]
+
+[tool.setuptools.package-data]
+airis_pdm = ["assets/*.js"]

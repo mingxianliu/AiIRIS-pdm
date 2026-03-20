@@ -16,6 +16,42 @@ if TYPE_CHECKING:
     from .theme_manager import ThemeManager
 
 
+_CSS_PROP_ORDER = [
+    "box-sizing",
+    "position",
+    "display",
+    "width",
+    "height",
+    "flex-direction",
+    "justify-content",
+    "align-items",
+    "gap",
+    "padding-top",
+    "padding-right",
+    "padding-bottom",
+    "padding-left",
+    "background-color",
+    "border",
+    "border-radius",
+    "box-shadow",
+    "opacity",
+    "font-size",
+    "font-family",
+    "font-weight",
+    "line-height",
+    "letter-spacing",
+    "text-align",
+    "color",
+]
+
+
+def _css_prop_sort_key(prop: str) -> tuple[int, str]:
+    try:
+        return (_CSS_PROP_ORDER.index(prop), prop)
+    except ValueError:
+        return (len(_CSS_PROP_ORDER), prop)
+
+
 @dataclass
 class ComponentSpec:
     name: str
@@ -42,10 +78,14 @@ class StyleSheet:
 
     def to_css(self) -> str:
         blocks = []
-        for class_name, styles in self.rules.items():
+        for class_name in sorted(self.rules.keys()):
+            styles = self.rules[class_name]
             if not styles:
                 continue
-            body = "\n".join(f"  {prop}: {val};" for prop, val in styles.items())
+            body = "\n".join(
+                f"  {prop}: {styles[prop]};"
+                for prop in sorted(styles.keys(), key=_css_prop_sort_key)
+            )
             blocks.append(f".{class_name} {{\n{body}\n}}")
         return "\n\n".join(blocks) + "\n" if blocks else ""
 

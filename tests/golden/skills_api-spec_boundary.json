@@ -1,0 +1,44 @@
+{
+  "spec": {
+    "api": {
+      "properties": [
+        {
+          "name": "Count",
+          "type": "string",
+          "defaultValue": "10",
+          "values": [],
+          "description": "Count property",
+          "isRequired": true
+        },
+        {
+          "name": "Label",
+          "type": "string",
+          "defaultValue": "Hello",
+          "values": [],
+          "description": "Label property",
+          "isRequired": true
+        },
+        {
+          "name": "Type",
+          "type": "string",
+          "defaultValue": "Primary",
+          "values": [],
+          "description": "Type property",
+          "isRequired": true
+        },
+        {
+          "name": "Visible",
+          "type": "boolean",
+          "defaultValue": "True",
+          "values": [
+            "true",
+            "false"
+          ],
+          "description": "Visible property",
+          "isRequired": false
+        }
+      ]
+    }
+  },
+  "markdown": "# PropHeavy — API Spec\n\n- 屬性數: 4\n"
+}
